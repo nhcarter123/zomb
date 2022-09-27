@@ -1,113 +1,78 @@
-function setWallImages(gridX, gridY)
-    for i = -1, 1 do
-        for j = -1, 1 do
-            local building = grid[gridX + i][gridY + j].building
-
-            if building then
-                building:setImage()
-            end
-        end
-    end
+function getWallTitle()
+   return "Wood wall"
 end
 
+function getWallDescription()
+   return "Cheap protection that stops zombies in their tracks"
+end
 
 function createWall(gridX, gridY)
-    local building = createBuilding(gridX, gridY, 0, 0, WALL_1_IMAGE)
+    local building = createBuilding(gridX, gridY, 0, 0, WALL_PIECE_1_IMAGE)
 
     building.isWall = true
+    building.scale = 0.52
+    building.title = getWallTitle()
+    building.description = getWallDescription()
 
     building.setImage = function(self)
-        local upIsWall = false
-        local downIsWall = false
-        local rightIsWall = false
-        local leftIsWall = false
-        local downRightIsWall = false
+        local canvas = love.graphics.newCanvas(256)
+        local hash = ""
 
-        if self.gridX - 1 >= -GRID_TILES then
-            local left = grid[self.gridX - 1][self.gridY].building
-            if left and left.isWall then
-                leftIsWall = true
-            end
-        end
-
-        if self.gridX + 1 <= GRID_TILES then
-            local right = grid[self.gridX + 1][self.gridY].building
-            if right and right.isWall then
-                rightIsWall = true
-            end
-        end
-
-        if self.gridY - 1 >= -GRID_TILES then
-            local up = grid[self.gridX][self.gridY - 1].building
-            if up and up.isWall then
-                upIsWall = true
-            end
-        end
-
-        if self.gridY + 1 <= GRID_TILES then
-            local down = grid[self.gridX][self.gridY + 1].building
-            if down and down.isWall then
-                downIsWall = true
-            end
-
-            if self.gridX + 1 <= GRID_TILES then
-                local downRight = grid[self.gridX + 1][self.gridY + 1].building
-                if downRight and downRight.isWall then
-                    downRightIsWall = true
+        for j = -1, 1 do
+            for i = -1, 1 do
+                local neighbor = grid[self.gridX + i][self.gridY + j].building
+                if neighbor and (neighbor.isWall or neighbor.connectsWithWall) then
+                    hash = hash.."1"
+                else
+                    hash = hash.."0"
                 end
             end
         end
 
-        if upIsWall and downIsWall and rightIsWall and leftIsWall then
-            self.image = WALL_9_IMAGE
-            self.angle = toRad(0)
-        elseif upIsWall and downIsWall and rightIsWall then
-            self.image = WALL_11_IMAGE
-            self.angle = toRad(180)
-        elseif upIsWall and downIsWall and leftIsWall then
-            self.image = WALL_11_IMAGE
-            self.angle = toRad(0)
-        elseif leftIsWall and downIsWall and rightIsWall then
-            self.image = WALL_11_IMAGE
-            self.angle = toRad(270)
-        elseif leftIsWall and upIsWall and rightIsWall then
-            self.image = WALL_11_IMAGE
-            self.angle = toRad(90)
-        elseif rightIsWall and downIsWall then
-            self.image = WALL_12_IMAGE
-            self.angle = toRad(0)
-        elseif leftIsWall and downIsWall then
-            self.image = WALL_12_IMAGE
-            self.angle = toRad(90)
-        elseif rightIsWall and upIsWall then
-            self.image = WALL_12_IMAGE
-            self.angle = toRad(270)
-        elseif leftIsWall and upIsWall then
-            self.image = WALL_12_IMAGE
-            self.angle = toRad(180)
-        elseif upIsWall and downIsWall then
-            self.image = WALL_10_IMAGE
-            self.angle = toRad(0)
-        elseif leftIsWall and rightIsWall then
-            self.image = WALL_10_IMAGE
-            self.angle = toRad(90)
-        elseif upIsWall then
-            self.image = WALL_2_IMAGE
-            self.angle = toRad(180)
-        elseif downIsWall then
-            self.image = WALL_2_IMAGE
-            self.angle = toRad(0)
-        elseif leftIsWall then
-            self.image = WALL_2_IMAGE
-            self.angle = toRad(90)
-        elseif rightIsWall then
-            self.image = WALL_2_IMAGE
-            self.angle = toRad(270)
+        local cachedImage = WALL_PIECE_CACHE[hash]
+
+        if cachedImage then
+            self.image = cachedImage
+        else
+            local tileSize = 128
+            local canvas = love.graphics.newCanvas(tileSize, tileSize)
+            love.graphics.setCanvas(canvas)
+
+            for i = 1, #hash do
+                local value = string.sub(hash, i, i)
+                if value == "1" then
+                    if i ~= 5 then
+                        local wallPiece = WALL_PIECE_2_IMAGE
+                        if (i % 2) == 0 then
+                            wallPiece = WALL_PIECE_3_IMAGE
+                        end
+
+                        local angle = 270
+
+                        if i == 3 or i == 6 then
+                            angle = 0
+                        elseif i == 4 or i == 7 then
+                            angle = 180
+                        elseif i == 8 or i == 9 then
+                            angle = 90
+                        end
+
+                        love.graphics.draw(wallPiece, tileSize / 2, tileSize / 2, toRad(angle), 1, 1, tileSize / 2, tileSize / 2)
+                    end
+                end
+            end
+
+            love.graphics.draw(WALL_PIECE_1_IMAGE, 0, 0)
+
+            love.graphics.setCanvas()
+
+            self.image = canvas
+            WALL_PIECE_CACHE[hash] = canvas
         end
     end
 
     building:setGrid()
-    setWallImages(gridX, gridY)
+    building:setWallImages(gridX, gridY)
 
     return building
 end

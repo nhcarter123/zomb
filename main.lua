@@ -11,8 +11,7 @@ require("explosion")
 
 require("buttons/button")
 require("buttons/tab")
-require("buttons/houseButton")
-require("buttons/outpostButton")
+require("buttons/buttons")
 
 require("guns/gun")
 require("guns/m1911")
@@ -23,15 +22,19 @@ require("ammo/45acp")
 
 require("buildings/building")
 require("buildings/wall")
-require("buildings/sandbags")
+require("buildings/outpost")
 require("buildings/bunker")
 require("buildings/house")
 require("buildings/tree")
 require("buildings/storage")
+require("buildings/farm")
 
 require("shaders/fowShader")
+require("shaders/outlineShader")
 
 require("selected")
+
+DescriptionPanel = require("descriptionPanel")
 
 
 gamera = require("gamera")
@@ -43,9 +46,6 @@ love.window.setMode(600, 600, {
 --love.window.setFullscreen(true)
 
 targetScale = 1
-
-offsetX = 0
-offsetY = 0
 time = 0
 
 debug = {}
@@ -76,7 +76,7 @@ targetCamY = 0
 camX = targetCamX
 camY = targetCamY
 PAN_PADDING = 100
-PAN_SPEED = 15000
+PAN_SPEED = 10000
 worldWidth = 1600 * 10
 worldHeight = 900 * 10
 cam = gamera.new(-worldWidth / 2, -worldHeight / 2, worldWidth, worldHeight)
@@ -87,8 +87,16 @@ SHADOW_SIZE = 10000
 SEARCH_NODES = {}
 MAX_SEARCHES = 2000
 
-POPULATION = 0
-MONEY = 50
+POPULATION = 4
+MAX_POPULATION = 0
+WOOD = 20
+MAX_WOOD = 0
+FOOD = 20
+MAX_FOOD = 0
+HAPPINESS = 50
+MAX_HAPPINESS = 100
+
+MONEY = 500
 
 SELECTED = nil
 SELECTED_TAB = nil
@@ -96,6 +104,14 @@ SELECTED_TAB = nil
 E_UNIT_SOLDIER = "Soldier"
 E_UNIT_FARMER = "Farmer"
 E_UNIT_ZOMBIE = "Zombie"
+
+WALL_PIECE_CACHE = {}
+
+HOVERED_GRID_X = 0
+HOVERED_GRID_Y = 0
+HOVERED_TILES = {}
+SAVED_HOVERED_TILES = {}
+
 
 --     love.window.showMessageBox("test", tostring(M1_ABRAMS_BODY_IMAGE))
 
@@ -111,7 +127,6 @@ function love.load()
     SHADOW_IMAGE = love.graphics.newImage("shadow.png")
     BUNKER_IMAGE = love.graphics.newImage("bunker.png")
 --    SANDBAGS_IMAGE = love.graphics.newImage("sandbags.png")
-    SANDBAGS_IMAGE = love.graphics.newImage("images/storage.png")
 
     WALL_1_IMAGE = love.graphics.newImage("images/wall1.png")
     WALL_2_IMAGE = love.graphics.newImage("images/wall2.png")
@@ -126,6 +141,10 @@ function love.load()
     WALL_11_IMAGE = love.graphics.newImage("images/wall11.png")
     WALL_12_IMAGE = love.graphics.newImage("images/wall12.png")
 
+    WALL_PIECE_1_IMAGE = love.graphics.newImage("images/wallPiece1.png")
+    WALL_PIECE_2_IMAGE = love.graphics.newImage("images/wallPiece2.png")
+    WALL_PIECE_3_IMAGE = love.graphics.newImage("images/wallPiece3.png")
+
     EXPLOSION_IMAGE = love.graphics.newImage("explosion6.png")
     ZOMBIE_IMAGE = love.graphics.newImage("zombie.png")
     ZOMBIE_SHEET = love.graphics.newImage("zombieSheet.png")
@@ -139,13 +158,19 @@ function love.load()
     HOUSE_IMAGE = love.graphics.newImage("images/house.png")
     HOUSE_2_IMAGE = love.graphics.newImage("images/house2.png")
 
-    BUTTON_IMAGE = love.graphics.newImage("images/button.png")
+    STORAGE_FLOOR_IMAGE = love.graphics.newImage("images/storageFloor.png")
+    STORAGE_ROOF_IMAGE = love.graphics.newImage("images/storageRoof.png")
+
+    STUMP_IMAGE = love.graphics.newImage("images/stump.png")
     TREE_IMAGE = love.graphics.newImage("images/tree3.png")
     TREE_1_IMAGE = love.graphics.newImage("images/tree6.png")
     TREE_2_IMAGE = love.graphics.newImage("images/tree7.png")
     TREE_3_IMAGE = love.graphics.newImage("images/tree8.png")
     TREE_4_IMAGE = love.graphics.newImage("images/tree5.png")
     TREE_5_IMAGE = love.graphics.newImage("images/tree11.png")
+
+    TOWER_IMAGE = love.graphics.newImage("images/tower.png")
+    FARM_IMAGE = love.graphics.newImage("images/farm.png")
     GRASS_IMAGE = love.graphics.newImage("images/grass.png")
 --    TILE_IMAGE = love.graphics.newImage("images/grass1.png")
 --    WINTER_IMAGE = love.graphics.newImage("winter.jpg")
@@ -160,10 +185,13 @@ function love.load()
             createHouseButton(),
         }),
         createTab("Production", {
-
+            createFarmButton(),
+            createStorageButton(),
         }),
         createTab("Defense", {
-            createStorageButton(),
+            createWallButton(),
+            createOutpostButton(),
+--            createStorageButton(),
         }),
     }
 
@@ -197,10 +225,10 @@ function love.load()
             }
             love.graphics.rectangle("line", (i + GRID_TILES) * tileSize, (j + GRID_TILES) * tileSize, tileSize, tileSize)
 
-            if noise > 0.7 then
-                local building = createTree(i, j)
-                table.insert(buildings, building)
-            end
+--            if noise > 0.7 then
+--                local building = createTree(i, j)
+--                table.insert(buildings, building)
+--            end
         end
     end
 
@@ -214,14 +242,18 @@ function love.load()
             love.graphics.draw(GRASS_IMAGE, i * tileSize, j * tileSize)
         end
     end
+
     love.graphics.setCanvas()
 
 
-    local building = createHouse(0, 0)
-    table.insert(buildings, building)
-    building:setGrid()
+    table.insert(buildings, createHouse(-2, 0))
+    table.insert(buildings, createStorage(1, 0))
 
     cam:setScale(targetScale)
+
+    local outlineThickness = 0.03
+    OUTLINE_SHADER = createOutlineShader()
+    OUTLINE_SHADER:send("stepSize", { outlineThickness, outlineThickness })
 
     FOW_SHADER = createFOWShader()
 
@@ -277,55 +309,55 @@ function getNeighbors(node)
 --    not (k == -1 and l == -1 and grid[i - 1][j].building and grid[i][j - 1].building) and
 --    not (k == 1 and l == -1 and grid[i + 1][j].building and grid[i][j - 1].building)
 
---    if node.x - 1 >= -GRID_TILES then
---        table.insert(neighbors, { x = node.x - 1, y = node.y })
---        if node.y - 1 >= -GRID_TILES and not (grid[node.x - 1][node.y].building and grid[node.x][node.y - 1].building) then
---            table.insert(neighbors, { x = node.x - 1, y = node.y - 1 })
---        end
---    end
---    if node.x + 1 <= GRID_TILES then
---        table.insert(neighbors, { x = node.x + 1, y = node.y })
---        if node.y + 1 <= GRID_TILES and not (grid[node.x + 1][node.y].building and grid[node.x][node.y + 1].building) then
---            table.insert(neighbors, { x = node.x + 1, y = node.y + 1 })
---        end
---    end
---    if node.y - 1 >= -GRID_TILES then
---        table.insert(neighbors, { x = node.x, y = node.y - 1 })
---        if node.x + 1 <= GRID_TILES and not (grid[node.x + 1][node.y].building and grid[node.x][node.y - 1].building) then
---            table.insert(neighbors, { x = node.x + 1, y = node.y - 1 })
---        end
---    end
---    if node.y + 1 <= GRID_TILES then
---        table.insert(neighbors, { x = node.x, y = node.y + 1 })
---        if node.x - 1 >= -GRID_TILES and not (grid[node.x - 1][node.y].building and grid[node.x][node.y + 1].building) then
---            table.insert(neighbors, { x = node.x - 1, y = node.y + 1 })
---        end
---    end
-
     if node.x - 1 >= -GRID_TILES then
         table.insert(neighbors, { x = node.x - 1, y = node.y })
-        if node.y - 1 >= -GRID_TILES then
+        if node.y - 1 >= -GRID_TILES and not (grid[node.x - 1][node.y].building and grid[node.x][node.y - 1].building) then
             table.insert(neighbors, { x = node.x - 1, y = node.y - 1 })
         end
     end
     if node.x + 1 <= GRID_TILES then
         table.insert(neighbors, { x = node.x + 1, y = node.y })
-        if node.y + 1 <= GRID_TILES then
+        if node.y + 1 <= GRID_TILES and not (grid[node.x + 1][node.y].building and grid[node.x][node.y + 1].building) then
             table.insert(neighbors, { x = node.x + 1, y = node.y + 1 })
         end
     end
     if node.y - 1 >= -GRID_TILES then
         table.insert(neighbors, { x = node.x, y = node.y - 1 })
-        if node.x + 1 <= GRID_TILES then
+        if node.x + 1 <= GRID_TILES and not (grid[node.x + 1][node.y].building and grid[node.x][node.y - 1].building) then
             table.insert(neighbors, { x = node.x + 1, y = node.y - 1 })
         end
     end
     if node.y + 1 <= GRID_TILES then
         table.insert(neighbors, { x = node.x, y = node.y + 1 })
-        if node.x - 1 >= -GRID_TILES then
+        if node.x - 1 >= -GRID_TILES and not (grid[node.x - 1][node.y].building and grid[node.x][node.y + 1].building) then
             table.insert(neighbors, { x = node.x - 1, y = node.y + 1 })
         end
     end
+
+--    if node.x - 1 >= -GRID_TILES then
+--        table.insert(neighbors, { x = node.x - 1, y = node.y })
+--        if node.y - 1 >= -GRID_TILES then
+--            table.insert(neighbors, { x = node.x - 1, y = node.y - 1 })
+--        end
+--    end
+--    if node.x + 1 <= GRID_TILES then
+--        table.insert(neighbors, { x = node.x + 1, y = node.y })
+--        if node.y + 1 <= GRID_TILES then
+--            table.insert(neighbors, { x = node.x + 1, y = node.y + 1 })
+--        end
+--    end
+--    if node.y - 1 >= -GRID_TILES then
+--        table.insert(neighbors, { x = node.x, y = node.y - 1 })
+--        if node.x + 1 <= GRID_TILES then
+--            table.insert(neighbors, { x = node.x + 1, y = node.y - 1 })
+--        end
+--    end
+--    if node.y + 1 <= GRID_TILES then
+--        table.insert(neighbors, { x = node.x, y = node.y + 1 })
+--        if node.x - 1 >= -GRID_TILES then
+--            table.insert(neighbors, { x = node.x - 1, y = node.y + 1 })
+--        end
+--    end
 
     return neighbors
 end
@@ -390,13 +422,12 @@ function calculateFlow()
                             if grid[x][y].building then
                                 grid[i][j].tight = true
                             end
-
---                            if
---                                not (k == 1 and l == 1 and grid[i + 1][j].building and grid[i][j + 1].building) and
---                                not (k == -1 and l == 1 and grid[i - 1][j].building and grid[i][j + 1].building) and
---                                not (k == -1 and l == -1 and grid[i - 1][j].building and grid[i][j - 1].building) and
---                                not (k == 1 and l == -1 and grid[i + 1][j].building and grid[i][j - 1].building)
---                            then
+                            if
+                                not (k == 1 and l == 1 and grid[i + 1][j].building and grid[i][j + 1].building) and
+                                not (k == -1 and l == 1 and grid[i - 1][j].building and grid[i][j + 1].building) and
+                                not (k == -1 and l == -1 and grid[i - 1][j].building and grid[i][j - 1].building) and
+                                not (k == 1 and l == -1 and grid[i + 1][j].building and grid[i][j - 1].building)
+                            then
                                 local dirToTarget = toDeg(angle(i, j, x, y))
                                 local dirToOrigin = toDeg(angle(i, j, 0, 0))
                                 local weight = grid[x][y].weight + math.abs(angleDiff(dirToTarget, dirToOrigin)) / 1000
@@ -407,7 +438,7 @@ function calculateFlow()
                                     x = k,
                                     y = l
                                 })
---                            end
+                            end
                         end
                     end
                 end
@@ -521,7 +552,7 @@ end
 
 function toGridSpace(pos)
     pos = pos / GRID_SIZE
-    return round(pos)
+    return clamp(-GRID_TILES, round(pos), GRID_TILES)
 end
 
 function toWorldSpace(pos)
@@ -547,70 +578,32 @@ function doesOverlap(gridX, gridY, shape)
     end
 end
 
+function love.keypressed(key, scancode, isrepeat)
+    if key == "escape" then
+        love.event.quit()
+    end
+
+    if key == "return" then
+        DEBUG_MODE = true
+    end
+
+    if key == "lshift" then
+        SHIFT_IS_DOWN = true
+    end
+end
+
+function love.keyreleased(key, scancode, isrepeat)
+    if key == "lshift" then
+        SHIFT_IS_DOWN = false
+    end
+end
+
 function love.mousepressed(x, y, button, istouch)
-    local mx, my = love.mouse.getPosition()
-    local worldMx, worldMy = cam:toWorld(mx, my)
-
     if button == 1 then
---        local spread = 200
---        local count = 80
---        for i = 1, count, 1 do
---            for j = 1, count, 1 do
---                table.insert(enemyUnits, createZombie(worldMx + math.random() * spread, worldMy + math.random() * spread))
---            end
---        end
+        MB1_CLICKED = true
+    end
 
-        local clickedOnNothing = true
-
-        if SELECTED then
-            SELECTED:click()
-            clickedOnNothing = false
-        end
-
-
-        if SELECTED_TAB then
-            for i = 1, #SELECTED_TAB.buttons do
-                local button = SELECTED_TAB.buttons [i]
-                if button.hovered then
-                    button:click()
-                    clickedOnNothing = false
-                end
-            end
-        end
-
-        for i = 1, #TABS do
-            local tab = TABS[i]
-            if tab.hovered then
-                tab:click()
-                clickedOnNothing = false
-            end
-        end
-
-        if clickedOnNothing then
-            SELECTED_TAB = nil
-        end
---        local gridX = toGridSpace(worldMx)
---        local gridY = toGridSpace(worldMy)
---
---        local shape = {
---            {1},
---        }
---
---        local overlaps = doesOverlap(gridX, gridY, shape)
---
---        if not overlaps then
-----            local building = createWall(gridX, gridY, gridX, gridY)
-----            table.insert(buildings, building)
-----
-----            grid[gridX][gridY].building = building
---
---            local building = createWall(gridX, gridY)
---
---            table.insert(buildings, building)
---
---            calculateGrid()
---        end
-    elseif button == 2 then
+    if button == 2 then
         SELECTED = nil
 
 --        local gridX = toGridSpace(worldMx)
@@ -668,36 +661,43 @@ function love.mousepressed(x, y, button, istouch)
 --    end
 end
 
+function love.mousereleased(x, y, button, istouch)
+    SELECT_ORIGIN_X = nil
+end
+
 function love.update(dt)
     time = time + dt
-    offsetX = math.sin(time)
 
     processField()
+
+    local mx, my = love.mouse.getPosition()
+    local worldMx, worldMy = cam:toWorld(mx, my)
+    local gridX = toGridSpace(worldMx)
+    local gridY = toGridSpace(worldMy)
+    HOVERED_TILE = grid[gridX][gridY]
 
     if SELECTED then
         SELECTED:update()
     end
 
-
     -- Border Pan
-    local mx, my = love.mouse.getPosition()
-    local xDiff = (love.graphics.getWidth() / 2 - mx) / love.graphics.getWidth()
-    local yDiff = (love.graphics.getHeight() / 2 - my) / love.graphics.getHeight()
-    local shouldPan = false
-
-    if
-        (mx < PAN_PADDING and my < love.graphics.getHeight() * 0.75) or mx > love.graphics.getWidth() - PAN_PADDING or
-        my < PAN_PADDING or (my > love.graphics.getHeight() - PAN_PADDING and
-        mx > love.graphics.getWidth() / 3)
-    then
-        shouldPan = true
-    end
-
-    if shouldPan then
-        local currentX, currentY = cam:getPosition()
-        targetCamX = currentX - (xDiff * PAN_SPEED * dt) / cam:getScale()
-        targetCamY = currentY - (yDiff * PAN_SPEED * dt) / cam:getScale()
-    end
+--    local xDiff = (love.graphics.getWidth() / 2 - mx) / love.graphics.getWidth()
+--    local yDiff = (love.graphics.getHeight() / 2 - my) / love.graphics.getHeight()
+--    local shouldPan = false
+--
+--    if
+--        (mx < PAN_PADDING and my < love.graphics.getHeight() * 0.75) or mx > love.graphics.getWidth() - PAN_PADDING or
+--        my < PAN_PADDING or (my > love.graphics.getHeight() - PAN_PADDING and
+--        mx > love.graphics.getWidth() / 3)
+--    then
+--        shouldPan = true
+--    end
+--
+--    if shouldPan then
+--        local currentX, currentY = cam:getPosition()
+--        targetCamX = currentX - (xDiff * PAN_SPEED * dt) / cam:getScale()
+--        targetCamY = currentY - (yDiff * PAN_SPEED * dt) / cam:getScale()
+--    end
 
 --    if updateFieldCount > UPDATE_FIELD_DURATION then
 --        updateFieldCount = 0
@@ -706,12 +706,152 @@ function love.update(dt)
 --        updateFieldCount = updateFieldCount + 1 * dt
 --    end
 
---    local down = love.mouse.isDown(1)
---    if down then
---        local mx, my = love.mouse.getPosition()
---        local worldMx, worldMy = cam:toWorld(mx, my)
---        table.insert(enemyUnits, createZombie(worldMx + (math.random() - 0.5) * 80, worldMy + (math.random() - 0.5) * 80))
---    end
+    local mouseDown = love.mouse.isDown(1)
+    local aIsDown = love.keyboard.isDown("a")
+    local dIsDown = love.keyboard.isDown("d")
+    local wIsDown = love.keyboard.isDown("w")
+    local sIsDown = love.keyboard.isDown("s")
+
+    local currentX, currentY = cam:getPosition()
+
+    if aIsDown then
+        targetCamX = currentX - (PAN_SPEED * dt) / cam:getScale()
+    end
+
+    if dIsDown then
+        targetCamX = currentX + (PAN_SPEED * dt) / cam:getScale()
+    end
+
+    if wIsDown then
+        targetCamY = currentY - (PAN_SPEED * dt) / cam:getScale()
+    end
+
+    if sIsDown then
+        targetCamY = currentY + (PAN_SPEED * dt) / cam:getScale()
+    end
+
+    if DEBUG_MODE then
+        if mouseDown then
+            local mx, my = love.mouse.getPosition()
+            local worldMx, worldMy = cam:toWorld(mx, my)
+            table.insert(enemyUnits, createZombie(worldMx + (math.random() - 0.5) * 80, worldMy + (math.random() - 0.5) * 80))
+        end
+    end
+
+    local mouseMovedTiles = false
+    if gridX ~= HOVERED_GRID_X or gridY ~= HOVERED_GRID_Y then
+        mouseMovedTiles = true
+
+        HOVERED_GRID_X = gridX
+        HOVERED_GRID_Y = gridY
+    end
+
+    if mouseDown then
+        if MB1_CLICKED then
+            local clickedOnNothing = true
+
+            if SELECTED then
+                clickedOnNothing = false
+            end
+
+            if SELECTED_TAB then
+                for i = 1, #SELECTED_TAB.buttons do
+                    local button = SELECTED_TAB.buttons [i]
+                    if button == HOVERED_BUTTON then
+                        button:click()
+                        clickedOnNothing = false
+                    end
+                end
+            end
+
+            for i = 1, #TABS do
+                local tab = TABS[i]
+                if tab.hovered then
+                    tab:click()
+                    clickedOnNothing = false
+                end
+            end
+
+            if clickedOnNothing then
+                SELECTED_TAB = nil
+                SELECT_ORIGIN_X = worldMx
+                SELECT_ORIGIN_Y = worldMy
+
+                if SHIFT_IS_DOWN then
+                    for i = 1, #HOVERED_TILES do
+                        local tile = HOVERED_TILES[i]
+                        if not contains(SAVED_HOVERED_TILES, tile) then
+                            table.insert(SAVED_HOVERED_TILES, tile)
+                        end
+                    end
+                else
+                    for i = 1, #SAVED_HOVERED_TILES do
+                        SAVED_HOVERED_TILES[i].building.highlighted = false
+                    end
+                    for i = 1, #HOVERED_TILES do
+                        HOVERED_TILES[i].building.highlighted = false
+                    end
+
+                    SAVED_HOVERED_TILES = {}
+                end
+
+                HOVERED_TILES = {}
+
+                if HOVERED_TILE.building then
+                    HOVERED_TILE.building.highlighted = true
+                    table.insert(HOVERED_TILES, HOVERED_TILE)
+                    DescriptionPanel:setVisible(true)
+                    DescriptionPanel:setInfo(HOVERED_TILE.building.title, HOVERED_TILE.building.description)
+                else
+                    DescriptionPanel:setVisible(false)
+                end
+            end
+        end
+
+
+        if SELECTED then
+            if mouseMovedTiles or MB1_CLICKED then
+                SELECTED:click()
+            end
+        elseif SELECT_ORIGIN_X then
+            SELECT_END_X = worldMx
+            SELECT_END_Y = worldMy
+
+            if mouseMovedTiles then
+                local originGridX = toGridSpace(SELECT_ORIGIN_X)
+                local originGridY = toGridSpace(SELECT_ORIGIN_Y)
+
+                for i = 1, #HOVERED_TILES do
+                    HOVERED_TILES[i].building.highlighted = false
+                end
+                HOVERED_TILES = {}
+
+                local loopStartX = math.min(gridX, originGridX)
+                local loopEndX = math.max(gridX, originGridX)
+                local loopStartY = math.min(gridY, originGridY)
+                local loopEndY = math.max(gridY, originGridY)
+
+                for i = loopStartX, loopEndX do
+                    for j = loopStartY, loopEndY do
+                        local tile = grid[i][j]
+                        if tile.building then
+                            tile.building.highlighted = true
+                            table.insert(HOVERED_TILES, tile)
+                        end
+                    end
+                end
+            end
+        end
+    else
+        if mouseMovedTiles then
+            if HOVERED_TILE.building then
+--
+            else
+--                DescriptionPanel:setVisible(false)
+            end
+        end
+    end
+
 
 --    local mx, my = love.mouse.getPosition()
 --    local worldMx, worldMy = cam:toWorld(mx, my)
@@ -788,7 +928,31 @@ function love.update(dt)
 
     if SELECTED_TAB then
         for i = #SELECTED_TAB.buttons, 1, -1 do
-            SELECTED_TAB.buttons[i]:update(-20 + i * 120, windowBottom - 120)
+            local button = SELECTED_TAB.buttons[i]
+            local x = (i - 1) * 100 + 60
+            local y = windowBottom - 120
+            local leftBound = x - button.width / 2
+            local rightBound = x + button.width / 2
+            local topBound = y - button.height / 2
+            local bottomBound = y + button.height / 2
+
+            local thisButtonHovered = button == HOVERED_BUTTON
+
+            if
+                mx < rightBound and mx > leftBound and
+                my > topBound and my < bottomBound
+            then
+                if not thisButtonHovered then
+                    HOVERED_BUTTON = button
+                    DescriptionPanel:setInfo(button.title, button.description)
+                    DescriptionPanel:setVisible(true)
+                end
+            elseif thisButtonHovered then
+                HOVERED_BUTTON = nil
+                DescriptionPanel:setVisible(false)
+            end
+
+            button:update(x, y, thisButtonHovered)
         end
     end
 
@@ -801,14 +965,18 @@ function love.update(dt)
     local camY = lerp(currentY, targetCamY, 0.05)
     cam:setPosition(camX, camY)
 
-    hud[1] = "Population: "..tostring(POPULATION)
-    hud[2] = "Money: "..tostring(MONEY)
+    hud[1] = "Population: "..tostring(POPULATION).."/"..tostring(MAX_POPULATION)
+    hud[2] = "Happiness: "..tostring(HAPPINESS).."/"..tostring(MAX_HAPPINESS)
+    hud[3] = "Wood: "..tostring(WOOD).."/"..tostring(MAX_WOOD)
+    hud[4] = "Food: "..tostring(FOOD).."/"..tostring(MAX_FOOD)
 
     debug[1] = "Current FPS: "..tostring(love.timer.getFPS())
     debug[2] = "soldiers: "..tostring(#playerUnits)
     debug[3] = "explosions: "..tostring(#explosions)
     debug[4] = "bullets: "..tostring(#bullets)
     debug[5] = "target scale: "..tostring(targetScale)
+
+    MB1_CLICKED = false
 end
 
 local function drawCameraStuff(l,t,w,h)
@@ -856,11 +1024,18 @@ local function drawCameraStuff(l,t,w,h)
         SELECTED:draw()
     end
 
+    if SELECT_ORIGIN_X and SELECT_END_X then
+        love.graphics.setColor(1, 1, 1, 0.2)
+        love.graphics.rectangle("fill", SELECT_ORIGIN_X, SELECT_ORIGIN_Y, SELECT_END_X - SELECT_ORIGIN_X, SELECT_END_Y - SELECT_ORIGIN_Y)
+        love.graphics.setColor(1, 1, 1)
+        love.graphics.rectangle("line", SELECT_ORIGIN_X, SELECT_ORIGIN_Y, SELECT_END_X - SELECT_ORIGIN_X, SELECT_END_Y - SELECT_ORIGIN_Y)
+    end
+
 --     Grid debug
 --    for i = -GRID_TILES, GRID_TILES, 1 do
 --        for j = -GRID_TILES, GRID_TILES, 1 do
-----            local value = grid[i][j].weight
-----            love.graphics.print(tostring(roundDecimal(value, 2)), i * GRID_SIZE, j * GRID_SIZE)
+--            local value = grid[i][j].weight
+--            love.graphics.print(tostring(roundDecimal(value, 2)), i * GRID_SIZE, j * GRID_SIZE)
 ----            local value = grid[i][j].tight
 ----            love.graphics.print(tostring(value), i * GRID_SIZE, j * GRID_SIZE)
 --
@@ -889,6 +1064,8 @@ end
 function love.draw()
     cam:draw(drawCameraStuff)
 
+    DescriptionPanel:draw()
+
     for i = 1, #TABS do
         TABS[i]:draw()
     end
@@ -900,7 +1077,7 @@ function love.draw()
     end
 
     for i = 1, #hud, 1 do
-        love.graphics.print(hud[i], 10 + i * 150, 30)
+        love.graphics.print(hud[i], 20, 30 + (i - 1) * 30)
     end
 
     for i = 1, #debug, 1 do
@@ -908,17 +1085,31 @@ function love.draw()
     end
 end
 
-function getClosest(x, y, targets)
+function getClosest(x, y, targets, fuzziness, filter)
     local lowestRange = 99999
     local closest
-    local fuzziness = 200
 
     for i = 1, #targets, 1 do
-        local enemy = targets[i]
-        local dist = dist(x, y, enemy.x + (math.random() - 0.5) * fuzziness, enemy.y + (math.random() - 0.5) * fuzziness)
-        if dist < lowestRange then
-            lowestRange = dist
-            closest = enemy
+        local target = targets[i]
+        local offsetX = 0
+        local offsetY = 0
+        local isValid = true
+
+        if fuzziness > 0 then
+            offsetX = (math.random() - 0.5) * fuzziness
+            offsetY = (math.random() - 0.5) * fuzziness
+        end
+
+        if filter then
+            isValid = filter(target)
+        end
+
+        if isValid then
+            local dist = dist(x, y, target.x + offsetX, target.y + offsetY)
+            if dist < lowestRange then
+                lowestRange = dist
+                closest = target
+            end
         end
     end
 
@@ -937,4 +1128,14 @@ function getWithinRadius(x, y, radius, targets)
     end
 
     return items
+end
+
+function contains(table, value)
+    for i = 1, #table do
+        if table[i] == value then
+            return true
+        end
+    end
+
+    return false
 end

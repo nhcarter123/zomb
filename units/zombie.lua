@@ -17,6 +17,7 @@ function createZombie(x, y)
     unit.debugX = 0
     unit.debugY = 0
     unit.path = 1
+    unit.speedMod = 1 + math.random() / 3
 
 
     unit.update = function(self, dt, index)
@@ -58,16 +59,13 @@ function createZombie(x, y)
 
 --            self.spread = (self.spread + spreadFactor * rand) / 1.1
 
-            if not tile.tight then
+--            if not tile.tight then
                 self.spread = clamp(-GRID_SIZE / 2 + 4, self.spread + 0.5 * GRID_SIZE * rand, GRID_SIZE / 2 - 4)
-            else
-                self.spread = GRID_SIZE / 4 * rand
-            end
+--            else
+--                self.spread = GRID_SIZE / 4 * rand
+--            end
 
             if self.gridX and self.gridY then
---                if tile.building then
---                   self.attacking = true
---                end
                 grid[self.gridX][self.gridY].units = grid[self.gridX][self.gridY].units - 1
                 grid[gridX][gridY].units = grid[gridX][gridY].units + 1
             else
@@ -90,11 +88,11 @@ function createZombie(x, y)
         local targetSpeed = 0
         local speed = 0
 
-        if self.attacking then
+        if self.cachedTile.building then
             targetX = gridX * GRID_SIZE
             targetY = gridY * GRID_SIZE
             dir = angle(self.x, self.y, targetX, targetY)
-            self.spread = 0
+--            self.spread = 0
 
             if self.attackCount > self.attackCooldownDuration then
                 if self.attackCount > self.attackDuration then
@@ -134,7 +132,7 @@ function createZombie(x, y)
             targetX = moveTile.flow[self.path].nextTile.x + lengthDirX(self.spread, moveTile.flow[self.path].dir + toRad(90))
             targetY = moveTile.flow[self.path].nextTile.y + lengthDirY(self.spread, moveTile.flow[self.path].dir + toRad(90))
             dir = angle(self.x, self.y, targetX, targetY)
-            targetSpeed = dt * 28000 / (tile.flow[self.path].nextTile.units + tile.units + 40)
+            targetSpeed = self.speedMod * dt * 20000 / (tile.flow[self.path].nextTile.units + tile.units + 40)
         end
 
         speed = lerp(speed, targetSpeed, 0.1)

@@ -1,32 +1,23 @@
-function createButton(contentImage)
-    local backImage = BUTTON_IMAGE
-
+function createButton(image, title, description, cost)
     local button = {
         scale = 1,
-        baseContentScale = 1,
-        backImage = backImage,
-        halfWidth = backImage:getWidth() / 2,
-        halfHeight = backImage:getHeight() / 2,
-        contentImage = contentImage,
-        halfContentWidth = contentImage:getWidth() / 2,
-        halfContentHeight = contentImage:getHeight() / 2,
-        hovered = false,
+        baseScale = 1,
+        width = 80,
+        height = 80,
+        image = image,
+        halfWidth = image:getWidth() / 2,
+        halfHeight = image:getHeight() / 2,
+        title = title,
+        description = description,
+        cost = cost,
 
-        update = function(self, x, y)
+        update = function(self, x, y, isHovered)
             self.x = x
             self.y = y
-            self.hovered = false
-            local mx, my = love.mouse.getPosition()
 
-            if
-                mx < self.x + self.halfWidth and mx > self.x - self.halfWidth and
-                my < self.y + self.halfHeight and my > self.y - self.halfHeight
-            then
-                self.hovered = true
-            end
 
             local targetScale = 1
-            if self.hovered then
+            if isHovered then
                 targetScale = 1.1
             end
 
@@ -34,8 +25,10 @@ function createButton(contentImage)
         end,
 
         draw = function(self)
-            love.graphics.draw(self.backImage, self.x, self.y, self.angle, 0.7 * self.scale, 0.7 * self.scale, self.halfWidth, self.halfHeight)
-            love.graphics.draw(self.contentImage, self.x, self.y, self.angle, self.baseContentScale * self.scale, self.baseContentScale * self.scale, self.halfContentWidth, self.halfContentHeight)
+            love.graphics.setColor(0.5, 0.5, 0.6)
+            love.graphics.rectangle("fill", self.x -  self.scale * self.width / 2, self.y - self.scale * self.height / 2, self.width * self.scale, self.height * self.scale)
+            love.graphics.setColor(1, 1, 1)
+            love.graphics.draw(self.image, self.x, self.y, self.angle, self.baseScale * self.scale, self.baseScale * self.scale, self.halfWidth, self.halfHeight)
         end
     }
 

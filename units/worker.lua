@@ -8,6 +8,9 @@ function createWorker(x, y, type)
     unit.tileOffsetX = (math.random() - 0.5) * GRID_SIZE * 0.7
     unit.tileOffsetY = (math.random() - 0.5) * GRID_SIZE * 0.7
 
+    unit.state = "Traveling"
+    unit.task = "Cut wood"
+
     unit.update = function(self, dt, time)
         if self.health <= 0 then
             return true -- flag for deletion
@@ -37,6 +40,17 @@ function createWorker(x, y, type)
         self.drawHealthbar(self)
     end
 
+    unit.getNextState = function(self, event)
+        if event == "Arrival" then
+            if self.task == "Cut wood" then
+                if self.state == "Traveling" then
+                    self.state = "Chop wood"
+                    self.target.beingCut = true
+                end
+            end
+        end
+    end
+
     unit.farmerStateMachine = function(self, dt, time)
         if self.targetGridX ~= nil then
             local targetX = toWorldSpace(self.targetGridX) + self.tileOffsetX
@@ -50,8 +64,33 @@ function createWorker(x, y, type)
                 local mx = lengthDirX(speed, dir)
                 local my = lengthDirY(speed, dir)
 
+
+                local diff = angleDiff(toDeg(self.angle), toDeg(dir))
+                self.angle = self.angle - dt * diff / 10
+
                 self.x = self.x + mx
                 self.y = self.y + my
+            else
+                self.targetGridX = nil
+                self.targetGridY = nil
+                self:getNextState("Arrival")
+            end
+        end
+
+        if self.task == "Cut wood" then
+            if not self.target then
+                local closest = getClosest(self.x, self.y, buildings, 0, isTree)
+                if closest then
+                    self.target = closest
+                    self.targetGridX = closest.gridX
+                    self.targetGridY = closest.gridY
+                end
+            end
+
+            if self.state == "Chop wood" then
+                local dir = angle(self.x, self.y, self.target.x, self.target.y)
+                local diff = angleDiff(toDeg(self.angle), toDeg(dir))
+                self.angle = self.angle - dt * diff / 10
             end
         end
     end
@@ -91,4 +130,8 @@ function createWorker(x, y, type)
     end
 
     return unit
+end
+
+function isTree(building)
+    return building.isTree
 end

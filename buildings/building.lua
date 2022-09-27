@@ -42,31 +42,37 @@ function createBuilding(gridX, gridY, offsetX, offsetY, image)
 
         draw = function(self)
             love.graphics.draw(self.image, self.x, self.y, self.angle, self.scale, self.scale, self.originX, self.originY)
-        end,
 
-        getOpenNeighborTilePos = function(self)
-            for j = 0, #self.shape - 1 do
-                local row = self.shape[j + 1]
-                for i = 0, #row - 1 do
-                    for k = -1, 1 do
-                        for l = -1, 1 do
-                            if not (k == 0 and l == 0) then
-                                local x = self.gridX + i + k
-                                local y = self.gridY + j + l
-                                if x >= -GRID_TILES and x <= GRID_TILES and
-                                   y >= -GRID_TILES and y <= GRID_TILES
-                                then
-                                    local occupied = grid[x][y].building
-                                    if not occupied then
-                                        return x, y
-                                    end
-                                end
-                            end
-                        end
-                    end
-                end
+            if self.highlighted then
+                love.graphics.setShader(OUTLINE_SHADER)
+                love.graphics.draw(self.image, self.x, self.y, self.angle, self.scale, self.scale, self.originX, self.originY)
+                love.graphics.setShader()
             end
         end,
+
+--        getOpenNeighborTilePos = function(self)
+--            for j = 0, #self.shape - 1 do
+--                local row = self.shape[j + 1]
+--                for i = 0, #row - 1 do
+--                    for k = -1, 1 do
+--                        for l = -1, 1 do
+--                            if not (k == 0 and l == 0) then
+--                                local x = self.gridX + i + k
+--                                local y = self.gridY + j + l
+--                                if x >= -GRID_TILES and x <= GRID_TILES and
+--                                   y >= -GRID_TILES and y <= GRID_TILES
+--                                then
+--                                    local occupied = grid[x][y].building
+--                                    if not occupied then
+--                                        return x, y
+--                                    end
+--                                end
+--                            end
+--                        end
+--                    end
+--                end
+--            end
+--        end,
 
         drawHealthbar = function(self)
             if self.health < self.maxHealth then
@@ -79,6 +85,18 @@ function createBuilding(gridX, gridY, offsetX, offsetY, image)
                 love.graphics.setColor(0.2, 0.9, 0.2)
                 love.graphics.rectangle("fill", self.x - healthBarWidth / 2 + 1, self.y + offsetY - 1, healthBarWidth * percentHealth - 2, healthBarHeight - 2)
                 love.graphics.setColor(1, 1, 1)
+            end
+        end,
+
+        setWallImages = function(self, gridX, gridY)
+            for i = -1, 1 do
+                for j = -1, 1 do
+                    local building = grid[gridX + i][gridY + j].building
+
+                    if building and building.isWall then
+                        building:setImage()
+                    end
+                end
             end
         end,
     }

@@ -1,7 +1,5 @@
 function createSelected(shape, image, createFn, offsetX, offsetY, cost)
     local selected = {
-        x = 0,
-        y = 0,
         image = image,
         halfWidth = image:getWidth() / 2,
         halfHeight = image:getHeight() / 2,
@@ -41,12 +39,14 @@ function createSelected(shape, image, createFn, offsetX, offsetY, cost)
         end,
 
         draw = function(self)
-            if not self.canPlace then
-                love.graphics.setColor(1, 0.8, 0.8, 0.8)
-            end
+            if self.x ~= nil then
+                if not self.canPlace then
+                    love.graphics.setColor(1, 0.8, 0.8, 0.5)
+                end
 
-            love.graphics.draw(self.image, self.x, self.y, 0, self.scale, self.scale, self.halfWidth, self.halfHeight)
-            love.graphics.setColor(1, 1, 1)
+                love.graphics.draw(self.image, self.x, self.y, 0, self.scale, self.scale, self.halfWidth, self.halfHeight)
+                love.graphics.setColor(1, 1, 1)
+            end
         end
     }
 
