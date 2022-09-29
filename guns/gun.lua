@@ -1,14 +1,4 @@
 function createGun(magazineSize, fireDelay, reloadDurtion, accuracy, velocityMod, minRange, maxRange, weight, ammo)
-    local fire = function(self, x, y, missX, missY, isHit, angle, distToTarget, target)
-        local speedFactor = self.ammo.velocity * self.velocityMod
-        local duration = distToTarget / speedFactor
-
-        local xVel = (target.x + missX - x) / duration
-        local yVel = (target.y + missY - y) / duration
-
-        return createBullet(x, y, 0, xVel, yVel, 0, duration, angle, target, isHit, self.ammo)
-    end
-
     return {
         minRange = minRange,
         maxRange = maxRange,
@@ -23,7 +13,15 @@ function createGun(magazineSize, fireDelay, reloadDurtion, accuracy, velocityMod
         fireDelay = fireDelay,
         fireCount = fireDelay,
 
-        fire = fire,
+        fire = function(self, x, y, missX, missY, isHit, angle, distToTarget, target)
+            local speedFactor = self.ammo.velocity * self.velocityMod
+            local duration = distToTarget / speedFactor
+
+            local xVel = (target.x + missX - x) / duration
+            local yVel = (target.y + missY - y) / duration
+
+            return createBullet(x, y, 0, xVel, yVel, 0, duration, angle, target, isHit, self.ammo)
+        end,
 
         pullTrigger = function(self, dt, x, y, angle, distToTarget, target)
             if self.magazineCount > 0 then
@@ -31,16 +29,19 @@ function createGun(magazineSize, fireDelay, reloadDurtion, accuracy, velocityMod
                     self.fireCount = 0
                     self.magazineCount = self.magazineCount - 1
 
-                    local missX = (math.random() - 0.5) * self.accuracy * distToTarget
-                    local missY = (math.random() - 0.5) * self.accuracy * distToTarget
-                    local missBy = dist(target.x, target.y, target.x + missX, target.y + missY)
-
                     local isHit = false
-                    if missBy < target.size then
+                    local rand = math.random()
+                    local missX = (math.random() - 0.5) * 10
+                    local missY = (math.random() - 0.5) * 10
+
+                    if rand > self.accuracy then
                         isHit = true
+                    else
+                        missX = missX * (distToTarget + 200) / 80
+                        missY = missY * (distToTarget + 200) / 80
                     end
 
-                    table.insert(bullets, self.fire(self, x, y, missX, missY, isHit, angle, distToTarget, target))
+                    table.insert(bullets, self:fire(x, y, missX, missY, isHit, angle, distToTarget, target))
                 else
                     self.fireCount = self.fireCount + dt
                 end

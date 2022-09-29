@@ -35,11 +35,6 @@ function createWorker(x, y, type)
         end
     end
 
-    unit.draw = function(self)
-        love.graphics.draw(self.image, self.x, self.y, self.angle, 0.5, 0.5, self.originX, self.originY)
-        self.drawHealthbar(self)
-    end
-
     unit.getNextState = function(self, event)
         if event == "Arrival" then
             if self.task == "Cut wood" then
@@ -130,8 +125,4 @@ function createWorker(x, y, type)
     end
 
     return unit
-end
-
-function isTree(building)
-    return building.isTree
 end

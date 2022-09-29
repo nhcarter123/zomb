@@ -1,4 +1,5 @@
 require("units/unit")
+require("units/archer")
 require("units/worker")
 require("units/zombie")
 require("units/tanks/tank")
@@ -14,11 +15,13 @@ require("buttons/tab")
 require("buttons/buttons")
 
 require("guns/gun")
+require("guns/bow")
 require("guns/m1911")
 require("guns/m1AbramsTurret")
 
 require("ammo/tankShell")
 require("ammo/45acp")
+require("ammo/arrow")
 
 require("buildings/building")
 require("buildings/wall")
@@ -35,7 +38,7 @@ require("shaders/outlineShader")
 require("selected")
 
 DescriptionPanel = require("descriptionPanel")
-
+DayManager = require("dayManager")
 
 gamera = require("gamera")
 
@@ -89,21 +92,15 @@ MAX_SEARCHES = 2000
 
 POPULATION = 4
 MAX_POPULATION = 0
-WOOD = 20
+WOOD = 30
 MAX_WOOD = 0
 FOOD = 20
 MAX_FOOD = 0
 HAPPINESS = 50
 MAX_HAPPINESS = 100
 
-MONEY = 500
-
 SELECTED = nil
 SELECTED_TAB = nil
-
-E_UNIT_SOLDIER = "Soldier"
-E_UNIT_FARMER = "Farmer"
-E_UNIT_ZOMBIE = "Zombie"
 
 WALL_PIECE_CACHE = {}
 
@@ -148,9 +145,13 @@ function love.load()
     EXPLOSION_IMAGE = love.graphics.newImage("explosion6.png")
     ZOMBIE_IMAGE = love.graphics.newImage("zombie.png")
     ZOMBIE_SHEET = love.graphics.newImage("zombieSheet.png")
+    ARCHER_IMAGE = love.graphics.newImage("images/archer.png")
     SOLDIER_IMAGE = love.graphics.newImage("images/worker.png")
     SOLDIER_2_IMAGE = love.graphics.newImage("soldier2.png")
+
     BULLET_IMAGE = love.graphics.newImage("bullet.png")
+    ARROW_IMAGE = love.graphics.newImage("images/arrow.png")
+
     TANK_SHELL = love.graphics.newImage("tankShell.png")
     M1_ABRAMS_BODY_IMAGE = love.graphics.newImage("tankBody.png")
     M1_ABRAMS_TURRET_IMAGE = love.graphics.newImage("tankTurret.png")
@@ -243,6 +244,9 @@ function love.load()
         end
     end
 
+    DEBRIS_CANVAS_SCALE = 1
+    DEBRIS_CANVAS = love.graphics.newCanvas(2 * GRID_SIZE * GRID_TILES / DEBRIS_CANVAS_SCALE, 2 * GRID_SIZE * GRID_TILES / DEBRIS_CANVAS_SCALE)
+
     love.graphics.setCanvas()
 
 
@@ -253,6 +257,7 @@ function love.load()
 
     local outlineThickness = 0.03
     OUTLINE_SHADER = createOutlineShader()
+    OUTLINE_SHADER:send("opacity", 0.7)
     OUTLINE_SHADER:send("stepSize", { outlineThickness, outlineThickness })
 
     FOW_SHADER = createFOWShader()
@@ -585,6 +590,7 @@ function love.keypressed(key, scancode, isrepeat)
 
     if key == "return" then
         DEBUG_MODE = true
+        DayManager:nextDay()
     end
 
     if key == "lshift" then
@@ -679,6 +685,8 @@ function love.update(dt)
     if SELECTED then
         SELECTED:update()
     end
+
+    DayManager:update(dt)
 
     -- Border Pan
 --    local xDiff = (love.graphics.getWidth() / 2 - mx) / love.graphics.getWidth()
@@ -801,7 +809,12 @@ function love.update(dt)
                     HOVERED_TILE.building.highlighted = true
                     table.insert(HOVERED_TILES, HOVERED_TILE)
                     DescriptionPanel:setVisible(true)
-                    DescriptionPanel:setInfo(HOVERED_TILE.building.title, HOVERED_TILE.building.description)
+                    DescriptionPanel:setInfo(
+                        HOVERED_TILE.building.title,
+                        HOVERED_TILE.building.description,
+                        nil,
+                        HOVERED_TILE.building:getStats()
+                    )
                 else
                     DescriptionPanel:setVisible(false)
                 end
@@ -897,12 +910,23 @@ function love.update(dt)
         end
     end
 
+    love.graphics.setCanvas(DEBRIS_CANVAS)
     for i = #bullets, 1, -1 do
-        local shouldDelete = bullets[i]:update(dt)
+        local bullet = bullets[i]
+        local shouldDelete = bullet:update(dt)
         if shouldDelete then
+            if bullet.ammo.hitImage and not bullet.isHit then
+                love.graphics.draw(bullet.ammo.hitImage,
+                    bullet.x + GRID_SIZE * GRID_TILES,
+                    bullet.y + GRID_SIZE * GRID_TILES,
+                    bullet.angle, bullet.scale / DEBRIS_CANVAS_SCALE, bullet.scale / DEBRIS_CANVAS_SCALE,
+                    bullet.originX, bullet.originY)
+            end
+
             table.remove(bullets, i)
         end
     end
+    love.graphics.setCanvas()
 
     for i = #explosions, 1, -1 do
         local shouldDelete = explosions[i]:update(dt)
@@ -944,7 +968,7 @@ function love.update(dt)
             then
                 if not thisButtonHovered then
                     HOVERED_BUTTON = button
-                    DescriptionPanel:setInfo(button.title, button.description)
+                    DescriptionPanel:setInfo(button.title, button.description, button.cost)
                     DescriptionPanel:setVisible(true)
                 end
             elseif thisButtonHovered then
@@ -986,6 +1010,11 @@ local function drawCameraStuff(l,t,w,h)
         -GRID_SIZE * (GRID_TILES + 0.5) - GRASS_PADDING_TILES * GRASS_TILE_SIZE * GRASS_SCALE,
         0, GRASS_SCALE, GRASS_SCALE)
 
+    love.graphics.draw(DEBRIS_CANVAS,
+        -GRID_SIZE * GRID_TILES,
+        -GRID_SIZE * GRID_TILES,
+        0, DEBRIS_CANVAS_SCALE, DEBRIS_CANVAS_SCALE)
+
     -- Draw grid
 
     if SELECTED then
@@ -995,14 +1024,14 @@ local function drawCameraStuff(l,t,w,h)
         love.graphics.setColor(1, 1, 1, 1)
     end
 
+    for i = 1, #buildings, 1 do
+        buildings[i]:draw()
+    end
     for i = 1, #playerUnits, 1 do
         playerUnits[i]:draw()
     end
     for i = 1, #enemyUnits, 1 do
         enemyUnits[i]:draw()
-    end
-    for i = 1, #buildings, 1 do
-        buildings[i]:draw()
     end
 
 --    love.graphics.draw(SPRITE_BATCH)
@@ -1064,6 +1093,8 @@ end
 function love.draw()
     cam:draw(drawCameraStuff)
 
+    DayManager:draw()
+
     DescriptionPanel:draw()
 
     for i = 1, #TABS do
@@ -1095,7 +1126,7 @@ function getClosest(x, y, targets, fuzziness, filter)
         local offsetY = 0
         local isValid = true
 
-        if fuzziness > 0 then
+        if fuzziness and fuzziness > 0 then
             offsetX = (math.random() - 0.5) * fuzziness
             offsetY = (math.random() - 0.5) * fuzziness
         end

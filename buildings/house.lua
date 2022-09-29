@@ -3,7 +3,7 @@ function getHouseTitle()
 end
 
 function getHouseDescription()
-    return "Houses 8 people"
+    return "Houses 4 people"
 end
 
 function createHouse(gridX, gridY)

@@ -20,14 +20,14 @@ function createOutpost(gridX, gridY)
     building:setGrid()
     building:setWallImages(gridX, gridY)
 
---    for i = 1, 2 do
---        for j = 1, 2 do
---            local soldier = createSoldier(building.x + (i - 1.5) * GRID_SIZE * 0.4, building.y + (j - 1.5) * GRID_SIZE * 0.4, createM1911(), SOLDIER_IMAGE)
---            soldier.building = building
---            table.insert(playerUnits, soldier)
---            table.insert(building.occupants, soldier)
---        end
---    end
+    for i = 1, 2 do
+        for j = 1, 2 do
+            local archer = createArcher(building.x + (i - 1.5) * GRID_SIZE * 0.5, building.y + (j - 1.5) * GRID_SIZE * 0.5, ARCHER_IMAGE)
+            archer.building = building
+            table.insert(playerUnits, archer)
+            table.insert(building.occupants, archer)
+        end
+    end
 
     return building
 end

@@ -43,11 +43,21 @@ function createBuilding(gridX, gridY, offsetX, offsetY, image)
         draw = function(self)
             love.graphics.draw(self.image, self.x, self.y, self.angle, self.scale, self.scale, self.originX, self.originY)
 
-            if self.highlighted then
+            if self.highlighted or (HOVERED_TILE and HOVERED_TILE.building == self) then
+                if self.highlighted then
+                    OUTLINE_SHADER:send("opacity", 0.7)
+                else
+                    OUTLINE_SHADER:send("opacity", 0.3)
+                end
+
                 love.graphics.setShader(OUTLINE_SHADER)
                 love.graphics.draw(self.image, self.x, self.y, self.angle, self.scale, self.scale, self.originX, self.originY)
                 love.graphics.setShader()
             end
+        end,
+
+        getStats = function(self)
+            return nil
         end,
 
 --        getOpenNeighborTilePos = function(self)

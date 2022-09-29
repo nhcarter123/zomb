@@ -15,7 +15,6 @@ function createBullet(x, y, z, xVel, yVel, zVel, duration, angle, target, isHit,
         duration = duration,
         isHit = isHit,
         ammo = ammo,
-        baseScale = 1,
         scale = 1,
 
         update = function(self, dt)
@@ -25,7 +24,7 @@ function createBullet(x, y, z, xVel, yVel, zVel, duration, angle, target, isHit,
             self.zVel = self.zVel - WORLD_GRAVITY * dt
 
             self.age = self.age + dt
-            self.scale = self.baseScale * (1 + (self.z / 500))
+            self.scale = self.ammo.scale * (1 + (self.z / 500))
 
             if self.age >= self.duration then
                 if self.ammo.explosion then

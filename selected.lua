@@ -23,7 +23,21 @@ function createSelected(shape, image, createFn, offsetX, offsetY, cost)
             self.y = (gridY + self.offsetY) * GRID_SIZE
 
             if gridX ~= self.gridX or gridY ~= self.gridY then
-                self.canPlace = not doesOverlap(gridX, gridY, self.shape) and MONEY >= self.cost
+                local canAfford = true
+                for i = 1, #self.cost do
+                    local type = self.cost[i][1]
+                    if type == "Wood" then
+                        if WOOD < self.cost[i][2] then
+                            canAfford = false
+                        end
+                    elseif type == "Food" then
+                        if FOOD < self.cost[i][2] then
+                            canAfford = false
+                        end
+                    end
+                end
+
+                self.canPlace = not doesOverlap(gridX, gridY, self.shape) and canAfford
                 self.gridX = gridX
                 self.gridY = gridY
             end
@@ -31,7 +45,15 @@ function createSelected(shape, image, createFn, offsetX, offsetY, cost)
 
         click = function(self)
             if self.canPlace then
-                MONEY = MONEY - self.cost
+                for i = 1, #self.cost do
+                    local type = self.cost[i][1]
+                    if type == "Wood" then
+                        WOOD = WOOD - self.cost[i][2]
+                    elseif type == "Food" then
+                        FOOD = FOOD - self.cost[i][2]
+                    end
+                end
+
                 local building = self.createFn(self.gridX, self.gridY)
                 table.insert(buildings, building)
                 calculateGrid()

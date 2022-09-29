@@ -1,5 +1,5 @@
 function createZombie(x, y)
-    local unit = createUnit(x, y, E_UNIT_ZOMBIE)
+    local unit = createUnit(x, y, ZOMBIE_IMAGE)
 
 --    unit.animation = createAnimation(image, 72, 78, 1)
     unit.gridX = nil
@@ -146,11 +146,10 @@ function createZombie(x, y)
 
         speed = 80 * speed / (math.abs(diff) + 60)
 
-        local mx = lengthDirX(speed, self.angle)
-        local my = lengthDirY(speed, self.angle)
-
-        self.x = self.x + mx
-        self.y = self.y + my
+        self.vx = lengthDirX(speed, self.angle)
+        self.vy = lengthDirY(speed, self.angle)
+        self.x = self.x + self.vx
+        self.y = self.y + self.vy
         self.gridX = gridX
         self.gridY = gridY
 

@@ -1,18 +1,17 @@
 function getGraneryTitle()
-    return "Granery"
+    return "Storage shed"
 end
 
 function getGraneryDescription()
-    return "Food storage"
+    return "Stores resources"
 end
 
 function createStorage(gridX, gridY)
     local building = createBuilding(gridX, gridY, 0.5, 0.5, STORAGE_FLOOR_IMAGE)
 
-    building.totalStorage = 40
+    building.totalStorage = 60
     building.title = getGraneryTitle()
     building.description = getGraneryDescription()
-    building.capacity = 40
     building.alpha = 0.25
     building.scale = 0.51
     building.shape = {
@@ -43,12 +42,17 @@ function createStorage(gridX, gridY)
             love.graphics.draw(STORAGE_ROOF_IMAGE, self.x, self.y, self.angle, self.scale, self.scale, self.originX, self.originY)
         end
 
-        if self.highlighted then
+        if self.highlighted or (HOVERED_TILE and HOVERED_TILE.building == self) then
+            if self.highlighted then
+                OUTLINE_SHADER:send("opacity", 0.7)
+            else
+                OUTLINE_SHADER:send("opacity", 0.3)
+            end
+
             love.graphics.setShader(OUTLINE_SHADER)
             love.graphics.draw(STORAGE_ROOF_IMAGE, self.x, self.y, self.angle, self.scale, self.scale, self.originX, self.originY)
             love.graphics.setShader()
         end
-
     end
 
     building.updateStorage = function(self)

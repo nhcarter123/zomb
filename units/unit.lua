@@ -1,29 +1,13 @@
-getUnitImageFromType = function(type)
-    if type == E_UNIT_FARMER then
-        return SOLDIER_IMAGE
-    end
-
-    if type == E_UNIT_SOLDIER then
-        return SOLDIER_IMAGE
-    end
-
-    if type == E_UNIT_ZOMBIE then
-        return ZOMBIE_IMAGE
-    end
-end
-
-function createUnit(x, y, type)
+function createUnit(x, y, image)
     local maxHealth = 100
-    local image = getUnitImageFromType(type)
 
     return {
         state = 'sentry',
         x = x,
         y = y,
-        type = type,
         angle = 0,
         target = nil,
-        size = 30,
+        size = 20,
         weight = 5,
         desiredRange = nil,
         health = maxHealth,
@@ -34,6 +18,18 @@ function createUnit(x, y, type)
         healthBarR = 0.2,
         healthBarG = 0.9,
         healthBarB = 0.2,
+        vx = 0,
+        vy = 0,
+
+        update = function(self)
+            if self.health <= 0 then
+                return true -- flag for deletion
+            end
+        end,
+
+        draw = function(self)
+            love.graphics.draw(self.image, self.x, self.y, self.angle, self.scale, self.scale, self.originX, self.originY)
+        end,
 
         drawHealthbar = function(self)
             if self.health < self.maxHealth then

@@ -2,6 +2,7 @@ function createOutlineShader()
     return love.graphics.newShader[[
         vec4 resultCol;
         extern vec2 stepSize;
+        extern float opacity;
 
         vec4 effect( vec4 col, Image texture, vec2 texturePos, vec2 screenPos )
         {
@@ -42,7 +43,7 @@ function createOutlineShader()
             alpha -= up;
 
             // calculate resulting color
-            resultCol = vec4( 1.0f, 1.0f, 1.0f, min(alpha, 0.6f) );
+            resultCol = vec4( 1.0f, 1.0f, 1.0f, min(alpha, opacity) );
             // return color for current pixel
             return resultCol;
         }
