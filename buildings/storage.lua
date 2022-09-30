@@ -22,7 +22,9 @@ function createStorage(gridX, gridY)
     local parentUpdate = building.update
 
     building.update = function(self)
-        parentUpdate(self)
+        if parentUpdate(self) then
+           return true
+        end
 
         if HOVERED_TILE and HOVERED_TILE.building == self then
             self.alpha = clamp(0, self.alpha - 0.025, 1)

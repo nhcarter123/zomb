@@ -1,4 +1,4 @@
-*.xml
+workspace.xml
 
 # Compiled Lua sources
 luac.out

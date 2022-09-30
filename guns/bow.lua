@@ -1,9 +1,9 @@
 function createBow()
     local gun = createGun(
-        100, -- magazine size
-        2.5, -- shot delay
-        5, -- reload time
-        0.5, -- acuracy mod,
+        10, -- magazine size
+        0.5, -- shot delay
+        3, -- reload time
+        0.25, -- acuracy mod,
         0.7, -- velocity mod,
         0, -- min range
         600, -- max range
@@ -17,7 +17,7 @@ function createBow()
 
         local d = dist(x, y, targetX, targetY)
 
-        local startHeight = 20
+        local startHeight = 30
         local airResistance = 0
         local launchAngle = toRad(d / 40)
 

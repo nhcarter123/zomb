@@ -13,6 +13,16 @@ function createWall(gridX, gridY)
     building.scale = 0.52
     building.title = getWallTitle()
     building.description = getWallDescription()
+    building.health = 150
+    building.maxHealth = 150
+
+    local parentUpdate = building.update
+    building.update = function(self)
+        if parentUpdate(self) then
+            self:setWallImages(self.gridX, self.gridY)
+            return true
+        end
+    end
 
     building.setImage = function(self)
         local canvas = love.graphics.newCanvas(256)

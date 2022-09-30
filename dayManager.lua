@@ -26,7 +26,12 @@ local DayManager = {
 
     draw = function(self)
         if self.isTransitioning then
-            local brightness = (1 + math.sin(math.pi * (self.time + 6) / 12)) / 2.8
+            local x = self.time
+            if self.time >= 21 or self.time <= 3 then
+                x = 21
+            end
+
+            local brightness = (1 + math.sin(math.pi * (x + 1.5) / 9)) / 2.8
             love.graphics.setColor(0, 0, 0, brightness)
             love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
             love.graphics.setColor(1, 1, 1)

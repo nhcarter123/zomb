@@ -10,23 +10,19 @@ function createBuilding(gridX, gridY, offsetX, offsetY, image)
         originX = image:getWidth() / 2,
         originY = image:getHeight() / 2,
         imageHeight = image:getHeight(),
-        occupants = {},
         shape = {{1}},
 
         update = function(self)
             if self.health <= 0 then
                 self:setGrid(true)
-                for i = #self.occupants, 1, -1 do
-                    local occupant = self.occupants[i]
-                    occupant.health = 0
-                    table.remove(self.occupants, i)
-                end
 
                 return true -- flag for deletion
             end
         end,
 
         setGrid = function(self, setNil)
+            GRID_DIRTY = true
+
             local value = self
             if setNil then
                 value = nil

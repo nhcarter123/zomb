@@ -15,7 +15,6 @@ function createBullet(x, y, z, xVel, yVel, zVel, duration, angle, target, isHit,
         duration = duration,
         isHit = isHit,
         ammo = ammo,
-        scale = 1,
 
         update = function(self, dt)
             self.x = self.x + self.xVel * dt
@@ -40,11 +39,11 @@ function createBullet(x, y, z, xVel, yVel, zVel, duration, angle, target, isHit,
         draw = function(self)
             if self.z > 0 then
                 love.graphics.setColor(0, 0, 0, 0.4 / ((self.z + 200) / 200))
-                love.graphics.draw(self.ammo.image, self.x, self.y, self.angle, self.scale, self.scale, self.originX, self.originY)
+                love.graphics.draw(self.ammo.image, self.x, self.y, self.angle, self.ammo.scale, self.ammo.scale, self.originX, self.originY)
                 love.graphics.setColor(1, 1, 1)
             end
 
-            love.graphics.draw(self.ammo.image, self.x, self.y - self.z, self.angle, self.scale, self.scale, self.originX, self.originY)
+            love.graphics.draw(self.ammo.image, self.x, self.y - self.z, self.angle, self.ammo.scale, self.ammo.scale, self.originX, self.originY)
         end
     }
 end

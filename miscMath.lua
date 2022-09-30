@@ -38,14 +38,7 @@ end;
 
 function angleDiff(a1, a2)
     local result = a1 - a2
-    if result > 180 then
-        result = result - 360
-    end
-    if result < -180 then
-        result = result + 360
-    end
-
-    return result
+    return (result + 180) % 360 - 180
 end
 
 function weightSort(object1, object2)

@@ -56,7 +56,6 @@ function createSelected(shape, image, createFn, offsetX, offsetY, cost)
 
                 local building = self.createFn(self.gridX, self.gridY)
                 table.insert(buildings, building)
-                calculateGrid()
             end
         end,
 

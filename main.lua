@@ -7,7 +7,6 @@ require("units/tanks/m1Abrams")
 
 require("miscMath")
 require("animation")
-require("bullet")
 require("explosion")
 
 require("buttons/button")
@@ -19,6 +18,7 @@ require("guns/bow")
 require("guns/m1911")
 require("guns/m1AbramsTurret")
 
+require("ammo/bullet")
 require("ammo/tankShell")
 require("ammo/45acp")
 require("ammo/arrow")
@@ -39,6 +39,7 @@ require("selected")
 
 DescriptionPanel = require("descriptionPanel")
 DayManager = require("dayManager")
+CloudManager = require("cloudManager")
 
 gamera = require("gamera")
 
@@ -67,7 +68,7 @@ GRID_SCALE = 2
 GRASS_SCALE = 1
 GRASS_TILE_SIZE = 256
 GRASS_PADDING_TILES = 2
-GRID_TILES = 40
+GRID_TILES = 30
 TOTAL_TILES = 2 * GRID_TILES + 1
 
 updateFieldCount = 0
@@ -90,14 +91,16 @@ SHADOW_SIZE = 10000
 SEARCH_NODES = {}
 MAX_SEARCHES = 2000
 
-POPULATION = 4
 MAX_POPULATION = 0
-WOOD = 30
 MAX_WOOD = 0
-FOOD = 20
 MAX_FOOD = 0
-HAPPINESS = 50
 MAX_HAPPINESS = 100
+
+POPULATION = 4
+WOOD = 30000--30
+FOOD = 30000--20
+HAPPINESS = 50
+
 
 SELECTED = nil
 SELECTED_TAB = nil
@@ -108,7 +111,6 @@ HOVERED_GRID_X = 0
 HOVERED_GRID_Y = 0
 HOVERED_TILES = {}
 SAVED_HOVERED_TILES = {}
-
 
 --     love.window.showMessageBox("test", tostring(M1_ABRAMS_BODY_IMAGE))
 
@@ -169,6 +171,10 @@ function love.load()
     TREE_3_IMAGE = love.graphics.newImage("images/tree8.png")
     TREE_4_IMAGE = love.graphics.newImage("images/tree5.png")
     TREE_5_IMAGE = love.graphics.newImage("images/tree11.png")
+
+    CLOUD_1_IMAGE = love.graphics.newImage("images/cloud.png")
+    CLOUD_2_IMAGE = love.graphics.newImage("images/cloud2.png")
+    CLOUD_3_IMAGE = love.graphics.newImage("images/cloud3.png")
 
     TOWER_IMAGE = love.graphics.newImage("images/tower.png")
     FARM_IMAGE = love.graphics.newImage("images/farm.png")
@@ -251,7 +257,7 @@ function love.load()
 
 
     table.insert(buildings, createHouse(-2, 0))
-    table.insert(buildings, createStorage(1, 0))
+    table.insert(buildings, createStorage(3, 0))
 
     cam:setScale(targetScale)
 
@@ -263,6 +269,8 @@ function love.load()
     FOW_SHADER = createFOWShader()
 
     calculateGrid()
+
+    CloudManager:init()
 end
 
 function calculateGrid()
@@ -273,7 +281,8 @@ function calculateGrid()
             table.insert(lights, {building.x / SHADOW_SIZE + 0.5, building.y / SHADOW_SIZE + 0.5})
         end
     end
-    FOW_SHADER:send("lights", unpack(lights))
+    FOW_SHADER:send("lights", unpack(lights) or {0, 0})
+
     calculateIntegrationField()
 end
 
@@ -300,7 +309,7 @@ function calculateCostOfTravel(node, targetNode)
     local tile = grid[targetNode.x][targetNode.y]
 
     if tile.building then
-        score = score + 12
+        score = score + 5
     end
 
     return score-- + tile.units / 12
@@ -485,14 +494,28 @@ function containsNode(nodes, node)
 end
 
 function calculateIntegrationField()
-    SEARCH_NODES = {
-        {
-            x = 0,
-            y = 0,
-        }
-    }
+    SEARCH_NODES = {}
+
+    for i = 1, #buildings do
+        local building = buildings[i]
+        if not building.isWall then
+            for j = 0, #building.shape - 1 do
+                local row = building.shape[j + 1]
+                for i = 0, #row - 1 do
+                    table.insert(SEARCH_NODES,
+                        {
+                            x = building.gridX + i,
+                            y = building.gridY + j
+                        }
+                    )
+                end
+            end
+        end
+    end
 
     resetFields()
+
+--    table.sort(options, weightSort)
 
     for i = 1, #SEARCH_NODES, 1 do
         local node = SEARCH_NODES[i]
@@ -589,12 +612,19 @@ function love.keypressed(key, scancode, isrepeat)
     end
 
     if key == "return" then
-        DEBUG_MODE = true
+        DEBUG_MODE = not DEBUG_MODE
+    end
+
+    if key == "space" then
         DayManager:nextDay()
     end
 
     if key == "lshift" then
         SHIFT_IS_DOWN = true
+    end
+
+    if key == "tab" then
+        GRID_DEBUG = not GRID_DEBUG
     end
 end
 
@@ -674,6 +704,10 @@ end
 function love.update(dt)
     time = time + dt
 
+    if GRID_DIRTY then
+        GRID_DIRTY = false
+        calculateGrid()
+    end
     processField()
 
     local mx, my = love.mouse.getPosition()
@@ -687,6 +721,7 @@ function love.update(dt)
     end
 
     DayManager:update(dt)
+    CloudManager:update(dt)
 
     -- Border Pan
 --    local xDiff = (love.graphics.getWidth() / 2 - mx) / love.graphics.getWidth()
@@ -995,10 +1030,11 @@ function love.update(dt)
     hud[4] = "Food: "..tostring(FOOD).."/"..tostring(MAX_FOOD)
 
     debug[1] = "Current FPS: "..tostring(love.timer.getFPS())
-    debug[2] = "soldiers: "..tostring(#playerUnits)
+    debug[2] = "enemies: "..tostring(#enemyUnits)
     debug[3] = "explosions: "..tostring(#explosions)
-    debug[4] = "bullets: "..tostring(#bullets)
-    debug[5] = "target scale: "..tostring(targetScale)
+    debug[4] = "buildings: "..tostring(#buildings)
+    debug[5] = "bullets: "..tostring(#bullets)
+    debug[6] = "target scale: "..tostring(targetScale)
 
     MB1_CLICKED = false
 end
@@ -1061,28 +1097,33 @@ local function drawCameraStuff(l,t,w,h)
     end
 
 --     Grid debug
---    for i = -GRID_TILES, GRID_TILES, 1 do
---        for j = -GRID_TILES, GRID_TILES, 1 do
---            local value = grid[i][j].weight
---            love.graphics.print(tostring(roundDecimal(value, 2)), i * GRID_SIZE, j * GRID_SIZE)
-----            local value = grid[i][j].tight
-----            love.graphics.print(tostring(value), i * GRID_SIZE, j * GRID_SIZE)
---
-----            local value = grid[i][j].noise
-----            love.graphics.setColor(value, value, value, 0.2)
-----            love.graphics.rectangle('fill',i * GRID_SIZE, j * GRID_SIZE, 64, 64)
---
---            local flow = grid[i][j].flow
---            if flow[1] then
---                if flow[1].x == 0 and flow[1].y == 0 then
---                    love.graphics.circle("fill", i * GRID_SIZE, j * GRID_SIZE, 2, 8)
---                else
---    --                love.graphics.line(i * GRID_SIZE, j * GRID_SIZE, (i + flow.x / 3) * GRID_SIZE, (j + flow.y / 3) * GRID_SIZE)
---                    love.graphics.line(i * GRID_SIZE, j * GRID_SIZE, flow[1].nextTile.x, flow[1].nextTile.y)
---                end
---            end
---        end
---    end
+    if GRID_DEBUG then
+        for i = -GRID_TILES, GRID_TILES, 1 do
+            for j = -GRID_TILES, GRID_TILES, 1 do
+                local value = grid[i][j].weight
+                love.graphics.print(tostring(roundDecimal(value, 2)), i * GRID_SIZE, j * GRID_SIZE)
+    --            local value = grid[i][j].building
+    --            love.graphics.print(tostring(value), i * GRID_SIZE, j * GRID_SIZE)
+
+    --            local value = grid[i][j].noise
+    --            love.graphics.setColor(value, value, value, 0.2)
+    --            love.graphics.rectangle('fill',i * GRID_SIZE, j * GRID_SIZE, 64, 64)
+
+                local flow = grid[i][j].flow
+                if flow[1] then
+                    if flow[1].x == 0 and flow[1].y == 0 then
+                        love.graphics.circle("fill", i * GRID_SIZE, j * GRID_SIZE, 2, 8)
+                    else
+        --                love.graphics.line(i * GRID_SIZE, j * GRID_SIZE, (i + flow.x / 3) * GRID_SIZE, (j + flow.y / 3) * GRID_SIZE)
+                        love.graphics.line(i * GRID_SIZE, j * GRID_SIZE, flow[1].nextTile.x, flow[1].nextTile.y)
+                    end
+                end
+            end
+        end
+    end
+
+    local currentX, currentY = cam:getPosition()
+    CloudManager:draw(currentX, currentY)
 
 --    love.graphics.setShader(FOW_SHADER) --draw something here
 --    love.graphics.draw(SHADOW_IMAGE, -SHADOW_SIZE / 2, -SHADOW_SIZE / 2, 0, SHADOW_SIZE, SHADOW_SIZE)
