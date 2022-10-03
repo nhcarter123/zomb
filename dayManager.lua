@@ -1,27 +1,46 @@
 local DayManager = {
     day = 1,
-    time = 12,
+    time = 10,
     isTransitioning = false,
+    shadowLength = 0,
 
     nextDay = function(self)
         self.isTransitioning = true
         self.looped = false
     end,
 
+    setShadowLength = function(self)
+        local x = self.time
+
+        if x <= 4 then
+            x = 4
+        end
+        if x >= 20 then
+            x = 20
+        end
+
+        self.shadowLength = -math.sin((x + 20) * math.pi / 16) / 2.5
+        DropShadowShader:send("shadowLength", self.shadowLength)
+    end,
+
     update = function(self, dt)
         if self.isTransitioning then
-            self.time = self.time + dt * 8
+            self.time = self.time + dt * 6
 
             if self.time > 24 then
                 self.time = self.time - 24
                 self.looped = true
             end
 
-            if self.time > 12 and self.looped then
-                self.time = 12
+            if self.time > 10 and self.looped then
+                self.time = 10
                 self.isTransitioning = false
             end
+        elseif self.time < 14 then
+            self.time = self.time + dt / 128
         end
+
+        self:setShadowLength()
     end,
 
     draw = function(self)

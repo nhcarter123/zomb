@@ -23,17 +23,18 @@ require("ammo/tankShell")
 require("ammo/45acp")
 require("ammo/arrow")
 
-require("buildings/building")
-require("buildings/wall")
-require("buildings/outpost")
-require("buildings/bunker")
-require("buildings/house")
-require("buildings/tree")
-require("buildings/storage")
-require("buildings/farm")
+Building = require("buildings/building")
+Wall = require("buildings/wall")
+Tower = require("buildings/outpost")
+House = require("buildings/house")
+WoodCutterHut = require("buildings/woodCutterHut")
+Tree = require("buildings/tree")
+Storage = require("buildings/storage")
+Farm = require("buildings/farm")
 
 require("shaders/fowShader")
 require("shaders/outlineShader")
+DropShadowShader = require("shaders/dropShadowShader")
 
 require("selected")
 
@@ -45,7 +46,7 @@ gamera = require("gamera")
 
 love.window.setMode(600, 600, {
     fullscreen = true,
-    borderless  = true
+    borderless = true
 })
 --love.window.setFullscreen(true)
 
@@ -72,7 +73,7 @@ GRID_TILES = 30
 TOTAL_TILES = 2 * GRID_TILES + 1
 
 updateFieldCount = 0
-UPDATE_FIELD_DURATION = 0.5
+UPDATE_FIELD_DURATION = 1
 
 WORLD_GRAVITY = 9.8 * 40
 targetCamX = 0
@@ -85,8 +86,7 @@ worldWidth = 1600 * 10
 worldHeight = 900 * 10
 cam = gamera.new(-worldWidth / 2, -worldHeight / 2, worldWidth, worldHeight)
 
-FOW_SHADER = nil
-SHADOW_SIZE = 10000
+SHADOW_SIZE = 5000
 
 SEARCH_NODES = {}
 MAX_SEARCHES = 2000
@@ -160,17 +160,17 @@ function love.load()
 
     HOUSE_IMAGE = love.graphics.newImage("images/house.png")
     HOUSE_2_IMAGE = love.graphics.newImage("images/house2.png")
+    WOOD_CUTTER_HUT_IMAGE = love.graphics.newImage("images/woodCutterHut.png")
 
     STORAGE_FLOOR_IMAGE = love.graphics.newImage("images/storageFloor.png")
     STORAGE_ROOF_IMAGE = love.graphics.newImage("images/storageRoof.png")
 
     STUMP_IMAGE = love.graphics.newImage("images/stump.png")
     TREE_IMAGE = love.graphics.newImage("images/tree3.png")
-    TREE_1_IMAGE = love.graphics.newImage("images/tree6.png")
-    TREE_2_IMAGE = love.graphics.newImage("images/tree7.png")
-    TREE_3_IMAGE = love.graphics.newImage("images/tree8.png")
-    TREE_4_IMAGE = love.graphics.newImage("images/tree5.png")
-    TREE_5_IMAGE = love.graphics.newImage("images/tree11.png")
+
+    TREE_1_IMAGE = love.graphics.newImage("images/tree5.png")
+    TREE_2_IMAGE = love.graphics.newImage("images/tree11.png")
+    TREE_3_IMAGE = love.graphics.newImage("images/tree12.png")
 
     CLOUD_1_IMAGE = love.graphics.newImage("images/cloud.png")
     CLOUD_2_IMAGE = love.graphics.newImage("images/cloud2.png")
@@ -193,6 +193,7 @@ function love.load()
         }),
         createTab("Production", {
             createFarmButton(),
+            createWoodCutterHutButton(),
             createStorageButton(),
         }),
         createTab("Defense", {
@@ -228,14 +229,18 @@ function love.load()
                 units = 0,
                 flowDir = 0,
                 noise = noise,
-                flow = {}
+                flow = {
+                    nextTile = {
+                        units = 0
+                    }
+                }
             }
             love.graphics.rectangle("line", (i + GRID_TILES) * tileSize, (j + GRID_TILES) * tileSize, tileSize, tileSize)
 
---            if noise > 0.7 then
---                local building = createTree(i, j)
---                table.insert(buildings, building)
---            end
+            if noise > 0.7 then
+                local building = Tree:create(i, j)
+                table.insert(buildings, building)
+            end
         end
     end
 
@@ -256,8 +261,8 @@ function love.load()
     love.graphics.setCanvas()
 
 
-    table.insert(buildings, createHouse(-2, 0))
-    table.insert(buildings, createStorage(3, 0))
+    table.insert(buildings, House:create(-2, 0))
+    table.insert(buildings, Storage:create(3, 0))
 
     cam:setScale(targetScale)
 
@@ -266,22 +271,46 @@ function love.load()
     OUTLINE_SHADER:send("opacity", 0.7)
     OUTLINE_SHADER:send("stepSize", { outlineThickness, outlineThickness })
 
-    FOW_SHADER = createFOWShader()
+--    FOW_SHADER = createFOWShader()
 
     calculateGrid()
+
+    DayManager:setShadowLength()
 
     CloudManager:init()
 end
 
 function calculateGrid()
-    local lights = {}
-    for i = #buildings, 1, -1 do
-        local building = buildings[i]
-        if not building.isWall then
-            table.insert(lights, {building.x / SHADOW_SIZE + 0.5, building.y / SHADOW_SIZE + 0.5})
-        end
-    end
-    FOW_SHADER:send("lights", unpack(lights) or {0, 0})
+--    local lights = {}
+--    for i = #buildings, 1, -1 do
+--        local building = buildings[i]
+--        if not building.isWall then
+--            table.insert(lights, {building.x / SHADOW_SIZE + 0.5, building.y / SHADOW_SIZE + 0.5})
+--        end
+--    end
+--    FOW_SHADER:send("lights", unpack(lights) or {0, 0})
+
+--    local lights = {}
+--    local shadows = {}
+--    local positions = {}
+--    for i = #buildings, 1, -1 do
+--        local building = buildings[i]
+--        if not building.isWall and not building.isTree then
+--            table.insert(lights, {building.x / SHADOW_SIZE + 0.5, building.y / SHADOW_SIZE + 0.5})
+--        end
+--
+--        table.insert(shadows, building.image)
+--        table.insert(positions, { building.x, building.y, 2 * building.scale * building.originX / GRID_SIZE, 2 * building.scale * building.originY / GRID_SIZE })
+--    end
+--    FOW_SHADER:send("lights", unpack(lights) or {0, 0})
+--
+----    FOW_SHADER:send("positions", {10, 10}, {20, 20})
+--
+--    FOW_SHADER:send("shadows", unpack(shadows))
+--    FOW_SHADER:send("positions", unpack(positions))
+
+--    FOW_SHADER:send("shadows", TREE_1_IMAGE, HOUSE_2_IMAGE)
+--    FOW_SHADER:send("positions", {1, 1}, {5, 5})
 
     calculateIntegrationField()
 end
@@ -290,7 +319,8 @@ function calculateCostOfTravel(node, targetNode)
 --    local dirToTarget = toDeg(angle(node.x, node.y, targetNode.x, targetNode.y))
 --    local dirToOrigin = toDeg(angle(0, 0, targetNode.x, targetNode.y))
 
-    local score = 1 --+ dist(targetNode.x, targetNode.y, 0, 0) / 40
+--    local score = 1 --+ dist(targetNode.x, targetNode.y, 0, 0) / 40
+    local score = 1--dist(targetNode.x, targetNode.y, node.x, node.y)
 
 --    local score = 1
 --    if math.abs(targetNode.x) > 1 or math.abs(targetNode.y) > 1 then
@@ -312,7 +342,7 @@ function calculateCostOfTravel(node, targetNode)
         score = score + 5
     end
 
-    return score-- + tile.units / 12
+    return score
 end
 
 function getNeighbors(node)
@@ -325,27 +355,27 @@ function getNeighbors(node)
 
     if node.x - 1 >= -GRID_TILES then
         table.insert(neighbors, { x = node.x - 1, y = node.y })
-        if node.y - 1 >= -GRID_TILES and not (grid[node.x - 1][node.y].building and grid[node.x][node.y - 1].building) then
-            table.insert(neighbors, { x = node.x - 1, y = node.y - 1 })
-        end
+--        if node.y - 1 >= -GRID_TILES and not (grid[node.x - 1][node.y].building and grid[node.x][node.y - 1].building) then
+--            table.insert(neighbors, { x = node.x - 1, y = node.y - 1 })
+--        end
     end
     if node.x + 1 <= GRID_TILES then
         table.insert(neighbors, { x = node.x + 1, y = node.y })
-        if node.y + 1 <= GRID_TILES and not (grid[node.x + 1][node.y].building and grid[node.x][node.y + 1].building) then
-            table.insert(neighbors, { x = node.x + 1, y = node.y + 1 })
-        end
+--        if node.y + 1 <= GRID_TILES and not (grid[node.x + 1][node.y].building and grid[node.x][node.y + 1].building) then
+--            table.insert(neighbors, { x = node.x + 1, y = node.y + 1 })
+--        end
     end
     if node.y - 1 >= -GRID_TILES then
         table.insert(neighbors, { x = node.x, y = node.y - 1 })
-        if node.x + 1 <= GRID_TILES and not (grid[node.x + 1][node.y].building and grid[node.x][node.y - 1].building) then
-            table.insert(neighbors, { x = node.x + 1, y = node.y - 1 })
-        end
+--        if node.x + 1 <= GRID_TILES and not (grid[node.x + 1][node.y].building and grid[node.x][node.y - 1].building) then
+--            table.insert(neighbors, { x = node.x + 1, y = node.y - 1 })
+--        end
     end
     if node.y + 1 <= GRID_TILES then
         table.insert(neighbors, { x = node.x, y = node.y + 1 })
-        if node.x - 1 >= -GRID_TILES and not (grid[node.x - 1][node.y].building and grid[node.x][node.y + 1].building) then
-            table.insert(neighbors, { x = node.x - 1, y = node.y + 1 })
-        end
+--        if node.x - 1 >= -GRID_TILES and not (grid[node.x - 1][node.y].building and grid[node.x][node.y + 1].building) then
+--            table.insert(neighbors, { x = node.x - 1, y = node.y + 1 })
+--        end
     end
 
 --    if node.x - 1 >= -GRID_TILES then
@@ -442,9 +472,13 @@ function calculateFlow()
                                 not (k == -1 and l == -1 and grid[i - 1][j].building and grid[i][j - 1].building) and
                                 not (k == 1 and l == -1 and grid[i + 1][j].building and grid[i][j - 1].building)
                             then
-                                local dirToTarget = toDeg(angle(i, j, x, y))
-                                local dirToOrigin = toDeg(angle(i, j, 0, 0))
-                                local weight = grid[x][y].weight + math.abs(angleDiff(dirToTarget, dirToOrigin)) / 1000
+--                                local dirToTarget = toDeg(angle(i, j, x, y))
+--                                local dirToOrigin = toDeg(angle(i, j, 0, 0))
+--                                local improvement = grid[x][y].weight
+                                local weight = grid[x][y].weight + dist(i, j, x, y) / 10
+--                                local weight = grid[x][y].weight + grid[x][j].units / 2
+--                                local weight = grid[x][y].weight + math.abs(angleDiff(dirToTarget, dirToOrigin)) / 1000
+--                                local weight = grid[x][y].weight + math.abs(angleDiff(dirToTarget, dirToOrigin)) / 1000
 --                                local weight = grid[x][y].weight + dist(x, y, 0, 0) / 100
     --                            love.window.showMessageBox("test", tostring(math.abs(angleDiff(dirToTarget, dirToOrigin))))
                                 table.insert(options, {
@@ -462,20 +496,16 @@ function calculateFlow()
 
             grid[i][j].x = toWorldSpace(i)
             grid[i][j].y = toWorldSpace(j)
-            grid[i][j].flow = {
-                {
-                    dir = angle(0, 0 , options[1].x, options[1].y),
-                    nextTile = grid[i + options[1].x][j + options[1].y],
-                },
-                {
-                    dir = angle(0, 0 , options[2].x, options[2].y),
-                    nextTile = grid[i + options[2].x][j + options[2].y],
-                },
-                {
-                    dir = angle(0, 0 , options[3].x, options[3].y),
-                    nextTile = grid[i + options[3].x][j + options[3].y],
-                }
-            }
+
+            local flow = {}
+            for k = 1, #options do
+                table.insert(flow, {
+                    dir = angle(0, 0 , options[k].x, options[k].y),
+                    nextTile = grid[i + options[k].x][j + options[k].y],
+                })
+            end
+
+            grid[i][j].flow = flow
         end
     end
 end
@@ -498,7 +528,7 @@ function calculateIntegrationField()
 
     for i = 1, #buildings do
         local building = buildings[i]
-        if not building.isWall then
+        if not building.isWall and not building.isTree then
             for j = 0, #building.shape - 1 do
                 local row = building.shape[j + 1]
                 for i = 0, #row - 1 do
@@ -617,6 +647,16 @@ function love.keypressed(key, scancode, isrepeat)
 
     if key == "space" then
         DayManager:nextDay()
+    end
+
+    if key == "right" then
+        DayManager.shadowLength = DayManager.shadowLength - 0.01
+        DropShadowShader:send("shadowLength", DayManager.shadowLength)
+    end
+
+    if key == "left" then
+        DayManager.shadowLength = DayManager.shadowLength + 0.01
+        DropShadowShader:send("shadowLength", DayManager.shadowLength)
     end
 
     if key == "lshift" then
@@ -741,7 +781,7 @@ function love.update(dt)
 --        targetCamX = currentX - (xDiff * PAN_SPEED * dt) / cam:getScale()
 --        targetCamY = currentY - (yDiff * PAN_SPEED * dt) / cam:getScale()
 --    end
-
+--
 --    if updateFieldCount > UPDATE_FIELD_DURATION then
 --        updateFieldCount = 0
 --        calculateIntegrationField()
@@ -1053,6 +1093,10 @@ local function drawCameraStuff(l,t,w,h)
 
     -- Draw grid
 
+--    love.graphics.setShader(FOW_SHADER) --draw something here
+--    love.graphics.draw(SHADOW_IMAGE, -SHADOW_SIZE / 2, -SHADOW_SIZE / 2, 0, SHADOW_SIZE, SHADOW_SIZE)
+--    love.graphics.setShader()
+
     if SELECTED then
         local scale = math.min(cam:getScale() / 2 - 0.1, 0.25)
         love.graphics.setColor(1, 1, 1, scale)
@@ -1060,11 +1104,14 @@ local function drawCameraStuff(l,t,w,h)
         love.graphics.setColor(1, 1, 1, 1)
     end
 
-    for i = 1, #buildings, 1 do
-        buildings[i]:draw()
+    love.graphics.setShader(DropShadowShader)
+    for i = #buildings, 1, -1 do
+        buildings[i]:drawShadow()
     end
-    for i = 1, #playerUnits, 1 do
-        playerUnits[i]:draw()
+    love.graphics.setShader()
+
+    for i = #buildings, 1, -1 do
+        buildings[i]:draw()
     end
     for i = 1, #enemyUnits, 1 do
         enemyUnits[i]:draw()
@@ -1075,8 +1122,9 @@ local function drawCameraStuff(l,t,w,h)
     for i = 1,#bullets,1 do
         bullets[i]:draw()
     end
+
     for i = 1, #buildings, 1 do
-        buildings[i]:drawHealthbar()
+        buildings[i]:postDraw()
     end
 
     love.graphics.setBlendMode("add")
@@ -1124,18 +1172,12 @@ local function drawCameraStuff(l,t,w,h)
 
     local currentX, currentY = cam:getPosition()
     CloudManager:draw(currentX, currentY)
-
---    love.graphics.setShader(FOW_SHADER) --draw something here
---    love.graphics.draw(SHADOW_IMAGE, -SHADOW_SIZE / 2, -SHADOW_SIZE / 2, 0, SHADOW_SIZE, SHADOW_SIZE)
---    love.graphics.setShader()
-
 end
 
 function love.draw()
     cam:draw(drawCameraStuff)
 
     DayManager:draw()
-
     DescriptionPanel:draw()
 
     for i = 1, #TABS do

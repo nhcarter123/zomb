@@ -36,14 +36,14 @@ function createZombie(x, y)
             local rand = (math.random() - 0.5)
 
             self.path = 1
-            if math.random() > threshold then
-                if rand > 0 then
-                    self.path = 2
-                end
-                if rand > 0.25 then
-                    self.path = 3
-                end
-            end
+--            if math.random() > threshold then
+--                if rand > 0 then
+--                    self.path = 2
+--                end
+--                if rand > 0.25 then
+--                    self.path = 3
+--                end
+--            end
 
 
 --            if not tile.tight and math.random() > threshold  then

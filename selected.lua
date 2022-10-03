@@ -1,16 +1,31 @@
-function createSelected(shape, image, createFn, offsetX, offsetY, cost)
+function createSelected(shape, image, selectedObject, offsetX, offsetY, cost)
+    local canAfford = true
+    for i = 1, #cost do
+        local type = cost[i][1]
+        if type == "Wood" then
+            if WOOD < cost[i][2] then
+                canAfford = false
+            end
+        elseif type == "Food" then
+            if FOOD < cost[i][2] then
+                canAfford = false
+            end
+        end
+    end
+
     local selected = {
         image = image,
         halfWidth = image:getWidth() / 2,
         halfHeight = image:getHeight() / 2,
         shape = shape,
-        createFn = createFn,
+        selectedObject = selectedObject,
         gridX = 0,
         gridY = 0,
         scale = 1,
         offsetX = offsetX,
         offsetY = offsetY,
         canPlace = false,
+        canAfford = canAfford,
         cost = cost,
 
         update = function(self)
@@ -23,21 +38,7 @@ function createSelected(shape, image, createFn, offsetX, offsetY, cost)
             self.y = (gridY + self.offsetY) * GRID_SIZE
 
             if gridX ~= self.gridX or gridY ~= self.gridY then
-                local canAfford = true
-                for i = 1, #self.cost do
-                    local type = self.cost[i][1]
-                    if type == "Wood" then
-                        if WOOD < self.cost[i][2] then
-                            canAfford = false
-                        end
-                    elseif type == "Food" then
-                        if FOOD < self.cost[i][2] then
-                            canAfford = false
-                        end
-                    end
-                end
-
-                self.canPlace = not doesOverlap(gridX, gridY, self.shape) and canAfford
+                self.canPlace = not doesOverlap(gridX, gridY, self.shape) and self.canAfford
                 self.gridX = gridX
                 self.gridY = gridY
             end
@@ -54,7 +55,7 @@ function createSelected(shape, image, createFn, offsetX, offsetY, cost)
                     end
                 end
 
-                local building = self.createFn(self.gridX, self.gridY)
+                local building = self.selectedObject:create(self.gridX, self.gridY)
                 table.insert(buildings, building)
             end
         end,
@@ -66,6 +67,15 @@ function createSelected(shape, image, createFn, offsetX, offsetY, cost)
                 end
 
                 love.graphics.draw(self.image, self.x, self.y, 0, self.scale, self.scale, self.halfWidth, self.halfHeight)
+
+                if self.aoe then
+                    love.graphics.setColor(1, 1, 1, 0.18)
+                    for i = 1, #self.aoe do
+                        local tile = self.aoe[i]
+                        love.graphics.rectangle("fill", self.x + (tile[1] - 0.5) * GRID_SIZE, self.y + (tile[2] - 0.5) * GRID_SIZE, GRID_SIZE - 4, GRID_SIZE - 4)
+                    end
+                end
+
                 love.graphics.setColor(1, 1, 1)
             end
         end
