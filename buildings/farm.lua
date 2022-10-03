@@ -18,6 +18,7 @@ return {
         building.cropWidth = 80
         building.cropHeight = 16
         building.scale = 0.5
+        building.drawShadow = function() end
         building.shape = {
             {1, 1},
             {1, 1},

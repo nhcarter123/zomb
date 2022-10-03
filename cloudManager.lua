@@ -18,14 +18,14 @@ local CloudManager = {
 
         local rand = math.random()
 
-        if rand > 0.8 then
+        if rand > 0.6 then
             image = CLOUD_3_IMAGE
             alpha = alpha * 0.5
             scale = scale * 1.1
-        elseif rand > 0.6 then
-            image = CLOUD_1_IMAGE
-            alpha = alpha * 1.1
-            scale = scale * 1.2
+--        elseif rand > 0.6 then
+--            image = CLOUD_1_IMAGE
+--            alpha = alpha * 1.1
+--            scale = scale * 1.2
         end
 
         table.insert(self.clouds, {
