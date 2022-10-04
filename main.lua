@@ -29,6 +29,7 @@ Tower = require("buildings/outpost")
 House = require("buildings/house")
 WoodCutterHut = require("buildings/woodCutterHut")
 Tree = require("buildings/tree")
+Rock = require("buildings/rock")
 Storage = require("buildings/storage")
 Farm = require("buildings/farm")
 
@@ -68,7 +69,7 @@ GRID_SIZE = 64
 GRID_SCALE = 2
 GRASS_SCALE = 1
 GRASS_TILE_SIZE = 256
-GRASS_PADDING_TILES = 2
+GRASS_PADDING_TILES = 0
 GRID_TILES = 30
 TOTAL_TILES = 2 * GRID_TILES + 1
 
@@ -109,8 +110,8 @@ WALL_PIECE_CACHE = {}
 
 HOVERED_GRID_X = 0
 HOVERED_GRID_Y = 0
-HOVERED_TILES = {}
-SAVED_HOVERED_TILES = {}
+SELECTED_TILES = {}
+SAVED_SELECTED_TILES = {}
 
 --     love.window.showMessageBox("test", tostring(M1_ABRAMS_BODY_IMAGE))
 
@@ -126,6 +127,11 @@ function love.load()
     SHADOW_IMAGE = love.graphics.newImage("shadow.png")
     BUNKER_IMAGE = love.graphics.newImage("bunker.png")
 --    SANDBAGS_IMAGE = love.graphics.newImage("sandbags.png")
+
+    ROCK_4_IMAGE = love.graphics.newImage("images/rock4.png")
+    ROCK_5_IMAGE = love.graphics.newImage("images/rock5.png")
+    ROCK_6_IMAGE = love.graphics.newImage("images/rock6.png")
+    ROCK_7_IMAGE = love.graphics.newImage("images/rock7.png")
 
     WALL_1_IMAGE = love.graphics.newImage("images/wall1.png")
     WALL_2_IMAGE = love.graphics.newImage("images/wall2.png")
@@ -203,14 +209,27 @@ function love.load()
         }),
     }
 
+    tileSize = GRASS_TILE_SIZE
+    local grassTileCount = math.floor(TOTAL_TILES / (GRASS_SCALE * (GRASS_TILE_SIZE / GRID_SIZE))) + 1 + GRASS_PADDING_TILES * 2
+    GRASS_CANVAS = love.graphics.newCanvas(grassTileCount * tileSize, grassTileCount * tileSize)
+    love.graphics.setCanvas(GRASS_CANVAS)
+
+    for i = 0, grassTileCount do
+        for j = 0, grassTileCount do
+            love.graphics.draw(GRASS_IMAGE, i * tileSize, j * tileSize)
+        end
+    end
+
     local tileSize = GRID_SIZE / GRID_SCALE
     gridcanvas = love.graphics.newCanvas(TOTAL_TILES * tileSize, TOTAL_TILES * tileSize)
+
     love.graphics.setCanvas(gridcanvas)
 
     local baseNoiseScale = 2
     local noiseScale1 = 1 * baseNoiseScale
     local noiseScale2 = 2 * baseNoiseScale
-    local noiseScale3 = 12 * baseNoiseScale
+    local noiseScale6 = 6 * baseNoiseScale
+    local noiseScale12 = 12 * baseNoiseScale
     local noiseOffsetX = math.random() * 10000
     local noiseOffsetY = math.random() * 10000
     for i = -GRID_TILES, GRID_TILES do
@@ -221,37 +240,41 @@ function love.load()
             local startingFactor = clamp(0, 0.01 * math.pow(dist(0, 0, i, j), 2), 1)
             local noise1 = love.math.noise(noiseX / noiseScale1, noiseY / noiseScale1)
             local noise2 = love.math.noise(noiseX / noiseScale2, noiseY / noiseScale2)
-            local noise3 = love.math.noise(noiseX / noiseScale3, noiseY / noiseScale3)
-            local noise = math.sqrt(math.sqrt(noise1 * noise2 * noise3)) * startingFactor
+            local noise6 = love.math.noise(noiseX / noiseScale6, noiseY / noiseScale6)
+            local noise12 = love.math.noise(noiseX / noiseScale12, noiseY / noiseScale12)
+
+            local rockNoise = noise6 * startingFactor
+            local treeNoise = math.sqrt(math.sqrt(math.sqrt(noise1 * noise2 * noise12 * (1 - rockNoise)))) * startingFactor
 
             grid[i][j] = {
                 building = nil,
                 units = 0,
                 flowDir = 0,
-                noise = noise,
                 flow = {
                     nextTile = {
                         units = 0
                     }
                 }
             }
+
             love.graphics.rectangle("line", (i + GRID_TILES) * tileSize, (j + GRID_TILES) * tileSize, tileSize, tileSize)
 
-            if noise > 0.7 then
+            if treeNoise > 0.8 then
                 local building = Tree:create(i, j)
                 table.insert(buildings, building)
             end
-        end
-    end
 
-    tileSize = GRASS_TILE_SIZE
-    local grassTileCount = math.floor(TOTAL_TILES / (GRASS_SCALE * (GRASS_TILE_SIZE / GRID_SIZE))) + 1 + GRASS_PADDING_TILES * 2
-    GRASS_CANVAS = love.graphics.newCanvas(grassTileCount * tileSize, grassTileCount * tileSize)
-    love.graphics.setCanvas(GRASS_CANVAS)
-
-    for i = 0, grassTileCount do
-        for j = 0, grassTileCount do
-            love.graphics.draw(GRASS_IMAGE, i * tileSize, j * tileSize)
+            if rockNoise > 0.93 then
+                local building = Rock:create(i, j)
+                table.insert(buildings, building)
+--                love.graphics.setCanvas(GRASS_CANVAS)
+--                if math.random() > 0.5 then
+--                    love.graphics.draw(ROCK_2_IMAGE, (i + GRID_TILES) * GRID_SIZE, (j + GRID_TILES) * GRID_SIZE, 0, 0.5, 0.5, 0, 0)
+--                else
+--                    love.graphics.draw(ROCK_3_IMAGE, (i + GRID_TILES) * GRID_SIZE, (j + GRID_TILES) * GRID_SIZE, 0, 0.5, 0.5, 0, 0)
+--                end
+--                love.graphics.setCanvas(gridcanvas)
+            end
         end
     end
 
@@ -528,7 +551,7 @@ function calculateIntegrationField()
 
     for i = 1, #buildings do
         local building = buildings[i]
-        if not building.isWall and not building.isTree then
+        if not building.isWall and not building.isTree and not building.isRock then
             for j = 0, #building.shape - 1 do
                 local row = building.shape[j + 1]
                 for i = 0, #row - 1 do
@@ -861,38 +884,57 @@ function love.update(dt)
                 SELECT_ORIGIN_Y = worldMy
 
                 if SHIFT_IS_DOWN then
-                    for i = 1, #HOVERED_TILES do
-                        local tile = HOVERED_TILES[i]
-                        if not contains(SAVED_HOVERED_TILES, tile) then
-                            table.insert(SAVED_HOVERED_TILES, tile)
+                    for i = 1, #SELECTED_TILES do
+                        local tile = SELECTED_TILES[i]
+                        if not contains(SAVED_SELECTED_TILES, tile) then
+                            table.insert(SAVED_SELECTED_TILES, tile)
                         end
                     end
-                else
-                    for i = 1, #SAVED_HOVERED_TILES do
-                        SAVED_HOVERED_TILES[i].building.highlighted = false
+                    for i = 1, #SAVED_SELECTED_TILES do
+                        SAVED_SELECTED_TILES[i].building.highlighted = 1
                     end
-                    for i = 1, #HOVERED_TILES do
-                        HOVERED_TILES[i].building.highlighted = false
+                else
+                    for i = 1, #SAVED_SELECTED_TILES do
+                        SAVED_SELECTED_TILES[i].building.highlighted = nil
+                    end
+                    for i = 1, #SELECTED_TILES do
+                        SELECTED_TILES[i].building.highlighted = nil
                     end
 
-                    SAVED_HOVERED_TILES = {}
+                    SAVED_SELECTED_TILES = {}
                 end
 
-                HOVERED_TILES = {}
+                SELECTED_TILES = {}
 
                 if HOVERED_TILE.building then
-                    HOVERED_TILE.building.highlighted = true
-                    table.insert(HOVERED_TILES, HOVERED_TILE)
-                    DescriptionPanel:setVisible(true)
-                    DescriptionPanel:setInfo(
-                        HOVERED_TILE.building.title,
-                        HOVERED_TILE.building.description,
-                        nil,
-                        HOVERED_TILE.building:getStats()
-                    )
+                    table.insert(SELECTED_TILES, HOVERED_TILE)
+
+                    if #SELECTED_TILES == 1 and #SAVED_SELECTED_TILES == 0 then
+                        HOVERED_TILE.building.highlighted = 2
+                        DescriptionPanel:setVisible(true)
+                        DescriptionPanel:setInfo(
+                            HOVERED_TILE.building.title,
+                            HOVERED_TILE.building.description,
+                            nil,
+                            HOVERED_TILE.building:getStats()
+                        )
+                    else
+                        HOVERED_TILE.building.highlighted = 1
+                        DescriptionPanel:setVisible(false)
+                    end
                 else
                     DescriptionPanel:setVisible(false)
                 end
+            else
+                for i = 1, #SAVED_SELECTED_TILES do
+                    SAVED_SELECTED_TILES[i].building.highlighted = nil
+                end
+                for i = 1, #SELECTED_TILES do
+                    SELECTED_TILES[i].building.highlighted = nil
+                end
+
+                SAVED_SELECTED_TILES = {}
+                SELECTED_TILES = {}
             end
         end
 
@@ -909,10 +951,10 @@ function love.update(dt)
                 local originGridX = toGridSpace(SELECT_ORIGIN_X)
                 local originGridY = toGridSpace(SELECT_ORIGIN_Y)
 
-                for i = 1, #HOVERED_TILES do
-                    HOVERED_TILES[i].building.highlighted = false
+                for i = 1, #SELECTED_TILES do
+                    SELECTED_TILES[i].building.highlighted = nil
                 end
-                HOVERED_TILES = {}
+                SELECTED_TILES = {}
 
                 local loopStartX = math.min(gridX, originGridX)
                 local loopEndX = math.max(gridX, originGridX)
@@ -923,19 +965,11 @@ function love.update(dt)
                     for j = loopStartY, loopEndY do
                         local tile = grid[i][j]
                         if tile.building then
-                            tile.building.highlighted = true
-                            table.insert(HOVERED_TILES, tile)
+                            tile.building.highlighted = 1
+                            table.insert(SELECTED_TILES, tile)
                         end
                     end
                 end
-            end
-        end
-    else
-        if mouseMovedTiles then
-            if HOVERED_TILE.building then
---
-            else
---                DescriptionPanel:setVisible(false)
             end
         end
     end
@@ -1110,11 +1144,11 @@ local function drawCameraStuff(l,t,w,h)
     end
     love.graphics.setShader()
 
-    for i = #buildings, 1, -1 do
-        buildings[i]:draw()
-    end
     for i = 1, #enemyUnits, 1 do
         enemyUnits[i]:draw()
+    end
+    for i = #buildings, 1, -1 do
+        buildings[i]:draw()
     end
 
 --    love.graphics.draw(SPRITE_BATCH)

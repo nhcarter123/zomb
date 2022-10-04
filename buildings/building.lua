@@ -23,6 +23,21 @@ getGridCircle = function(gridX, gridY, r, validFn)
     return tiles
 end
 
+drawAOE = function(aoe, x, y)
+    for i = 1, #aoe do
+        local tile = aoe[i]
+
+        if tile[3] then
+            love.graphics.setColor(1, 1, 1, 0.42)
+        else
+            love.graphics.setColor(1, 1, 1, 0.1)
+        end
+
+        love.graphics.rectangle("fill", x + (tile[1] - 0.5) * GRID_SIZE + 2, y + (tile[2] - 0.5) * GRID_SIZE + 2, GRID_SIZE - 4, GRID_SIZE - 4)
+    end
+    love.graphics.setColor(1, 1, 1)
+end
+
 return {
     create = function(gridX, gridY, offsetX, offsetY, image)
         return {
@@ -75,7 +90,7 @@ return {
 
                 love.graphics.draw(self.image, self.x, self.y, self.angle, self.scale, self.scale, self.originX, self.originY)
 
-                if self.highlighted or (HOVERED_TILE and HOVERED_TILE.building == self) then
+                if self.highlighted or (HOVERED_TILE and HOVERED_TILE.building == self and not SELECTED) then
                     if self.highlighted then
                         OUTLINE_SHADER:send("opacity", 0.7)
                     else
@@ -86,21 +101,6 @@ return {
                     love.graphics.draw(self.image, self.x, self.y, self.angle, self.scale, self.scale, self.originX, self.originY)
                     love.graphics.setShader()
                 end
-            end,
-
-            drawAOE = function(self)
-                for i = 1, #self.aoe do
-                    local tile = self.aoe[i]
-
-                    if tile[3] then
-                        love.graphics.setColor(1, 1, 1, 0.4)
-                    else
-                        love.graphics.setColor(1, 1, 1, 0.18)
-                    end
-
-                    love.graphics.rectangle("fill", self.x + (tile[1] - 0.5) * GRID_SIZE + 2, self.y + (tile[2] - 0.5) * GRID_SIZE + 2, GRID_SIZE - 4, GRID_SIZE - 4)
-                end
-                love.graphics.setColor(1, 1, 1)
             end,
 
             getStats = function(self)

@@ -41,6 +41,9 @@ function createSelected(shape, image, selectedObject, offsetX, offsetY, cost)
                 self.canPlace = not doesOverlap(gridX, gridY, self.shape) and self.canAfford
                 self.gridX = gridX
                 self.gridY = gridY
+                if self.selectedObject.getAOE then
+                    self.aoe = self.selectedObject.getAOE(gridX, gridY)
+                end
             end
         end,
 
@@ -57,6 +60,7 @@ function createSelected(shape, image, selectedObject, offsetX, offsetY, cost)
 
                 local building = self.selectedObject:create(self.gridX, self.gridY)
                 table.insert(buildings, building)
+                self.aoe = building.aoe
             end
         end,
 
@@ -69,11 +73,7 @@ function createSelected(shape, image, selectedObject, offsetX, offsetY, cost)
                 love.graphics.draw(self.image, self.x, self.y, 0, self.scale, self.scale, self.halfWidth, self.halfHeight)
 
                 if self.aoe then
-                    love.graphics.setColor(1, 1, 1, 0.18)
-                    for i = 1, #self.aoe do
-                        local tile = self.aoe[i]
-                        love.graphics.rectangle("fill", self.x + (tile[1] - 0.5) * GRID_SIZE, self.y + (tile[2] - 0.5) * GRID_SIZE, GRID_SIZE - 4, GRID_SIZE - 4)
-                    end
+                    drawAOE(self.aoe, self.x, self.y)
                 end
 
                 love.graphics.setColor(1, 1, 1)

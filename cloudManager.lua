@@ -4,7 +4,7 @@ local CloudManager = {
     clouds = {},
     wx = lengthDirX(1, dir),
     wy = lengthDirY(1, dir),
-    maxSize = 3000,
+    maxSize = 5000,
 
     createCloud = function(self, x, y)
         local image = CLOUD_2_IMAGE
@@ -84,7 +84,7 @@ local CloudManager = {
             local camAlpha = math.pow(distToCam + 1100, 2) / 2000000
 
             love.graphics.setColor(0, 0, 0, 0.06 * camAlpha)
-            love.graphics.draw(cloud.image, cloud.x, cloud.y, cloud.angle, 14 / camFactor, 14 / camFactor, cloud.originX, cloud.originY)
+            love.graphics.draw(cloud.image, cloud.x - DayManager.shadowLength * 1500, cloud.y + DayManager.shadowLength * 1500, cloud.angle, 14 / camFactor, 14 / camFactor, cloud.originX, cloud.originY)
             love.graphics.setColor(1, 1, 1, cloud.alpha * camAlpha)
             love.graphics.draw(cloud.image, visibleX, visibleY, cloud.angle,
                 cloud.scale * 10 / camFactor,

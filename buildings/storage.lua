@@ -27,7 +27,7 @@ return {
                 return true
             end
 
-            if HOVERED_TILE and HOVERED_TILE.building == self then
+            if HOVERED_TILE and HOVERED_TILE.building == self and not SELECTED then
                 self.alpha = clamp(0, self.alpha - 0.025, 1)
             else
                 self.alpha = clamp(0, self.alpha + 0.025, 1)
@@ -45,7 +45,7 @@ return {
                 love.graphics.draw(STORAGE_ROOF_IMAGE, self.x, self.y, self.angle, self.scale, self.scale, self.originX, self.originY)
             end
 
-            if self.highlighted or (HOVERED_TILE and HOVERED_TILE.building == self) then
+            if self.highlighted or (HOVERED_TILE and HOVERED_TILE.building == self and not SELECTED) then
                 if self.highlighted then
                     OUTLINE_SHADER:send("opacity", 0.7)
                 else

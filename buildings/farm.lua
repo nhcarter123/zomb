@@ -31,10 +31,10 @@ return {
 
             local pct = self.cropGrowth / self.cropGrowthTotal
 
-            if self.highlighted then
-                love.graphics.setColor(0.3, 0.3, 0.3)
+            if self.highlighted == 2 then
+                love.graphics.setColor(0.2, 0.2, 0.2)
                 love.graphics.rectangle("fill", self.x - self.cropWidth / 2, self.y - self.cropHeight / 2, self.cropWidth, self.cropHeight)
-                love.graphics.setColor(0.5, 0.65, 0.5)
+                love.graphics.setColor(0.5, 0.75, 0.5)
                 love.graphics.rectangle(
                     "fill",
                     self.x - self.cropWidth / 2 + pct * self.cropWidth / 2 + 2,

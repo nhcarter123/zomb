@@ -27,7 +27,7 @@ local descriptionPanel = {
             love.graphics.setColor(1, 1, 1)
 
             writeHeight = writeHeight + 10
-            love.graphics.print(self.title, self.x + self.width / 2, self.y + writeHeight)
+            love.graphics.print(self.title, self.x + 10, self.y + writeHeight)
 
             writeHeight = writeHeight + 30
 

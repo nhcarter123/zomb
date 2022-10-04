@@ -87,7 +87,7 @@ function createZombie(x, y)
         local targetSpeed = 0
         local speed = 0
 
-        if tile.building then
+        if tile.building and not tile.building.isTree and not tile.building.isRock then
             self.targetX = lerp(self.targetX, gridX * GRID_SIZE, 0.1)
             self.targetY = lerp(self.targetY, gridY * GRID_SIZE, 0.1)
             dir = angle(self.x, self.y, self.targetX, self.targetY)

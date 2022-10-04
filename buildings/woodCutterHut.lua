@@ -13,12 +13,16 @@ return {
         return "Gathers wood from nearby trees"
     end,
 
+    getAOE = function(gridX, gridY)
+        return getGridCircle(gridX, gridY, 5, isTree)
+    end,
+
     create = function(self, gridX, gridY)
         local building = Building.create(gridX, gridY, 0, 0, WOOD_CUTTER_HUT_IMAGE)
 
         building.title = self:getTitle()
         building.description = self:getDescription()
-        building.aoe = getGridCircle(gridX, gridY, 3, isTree)
+        building.aoe = self.getAOE(gridX, gridY)
         building.shape = {
             {1},
         }
@@ -28,8 +32,8 @@ return {
         building.postDraw = function(self)
             parentPostDraw(self)
 
-            if self.highlighted then
-                self:drawAOE()
+            if self.highlighted == 2 then
+                drawAOE(self.aoe, self.x, self.y)
             end
         end
 

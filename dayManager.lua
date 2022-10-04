@@ -19,7 +19,7 @@ local DayManager = {
             x = 20
         end
 
-        self.shadowLength = -math.sin((x + 20) * math.pi / 16) / 2.5
+        self.shadowLength = -math.sin((x + 20) * math.pi / 16) / 3
         DropShadowShader:send("shadowLength", self.shadowLength)
     end,
 
@@ -50,7 +50,7 @@ local DayManager = {
                 x = 21
             end
 
-            local brightness = (1 + math.sin(math.pi * (x + 1.5) / 9)) / 2.8
+            local brightness = (1 + math.sin(math.pi * (x + 1.5) / 9)) / 3
             love.graphics.setColor(0, 0, 0, brightness)
             love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
             love.graphics.setColor(1, 1, 1)
