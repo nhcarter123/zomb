@@ -29,6 +29,7 @@ local DayManager = {
 
             if self.time > 24 then
                 self.time = self.time - 24
+                self.day = self.day + 1
                 self.looped = true
             end
 
@@ -55,6 +56,8 @@ local DayManager = {
             love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
             love.graphics.setColor(1, 1, 1)
         end
+
+        love.graphics.print("Day: "..tostring(self.day), love.graphics.getWidth() - 120, love.graphics.getHeight() - 40)
     end
 }
 

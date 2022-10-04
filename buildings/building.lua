@@ -1,17 +1,19 @@
 getGridCircle = function(gridX, gridY, r, validFn)
     local radius = r
     local tiles = {}
+    local targets = {}
 
     for i = -r, r do
         for j = -r, r do
             local distance = dist(0, 0, i, j)
             if distance <= r then
                 local isValid = false
-                if validFn then
-                    local x = gridX + i
-                    local y = gridY + j
-                    if x >= -GRID_TILES and x <= GRID_TILES and y >= -GRID_TILES and y <= GRID_TILES then
-                        isValid = validFn(grid[x][y])
+                local x = gridX + i
+                local y = gridY + j
+                if x >= -GRID_TILES and x <= GRID_TILES and y >= -GRID_TILES and y <= GRID_TILES then
+                    if validFn(grid[x][y]) then
+                        isValid = true
+                        table.insert(targets, grid[x][y].building)
                     end
                 end
 
@@ -20,10 +22,10 @@ getGridCircle = function(gridX, gridY, r, validFn)
         end
     end
 
-    return tiles
+    return tiles, targets
 end
 
-drawAOE = function(aoe, x, y)
+drawAOE = function(aoe, x, y, closestTarget)
     for i = 1, #aoe do
         local tile = aoe[i]
 
@@ -35,7 +37,21 @@ drawAOE = function(aoe, x, y)
 
         love.graphics.rectangle("fill", x + (tile[1] - 0.5) * GRID_SIZE + 2, y + (tile[2] - 0.5) * GRID_SIZE + 2, GRID_SIZE - 4, GRID_SIZE - 4)
     end
+
+
     love.graphics.setColor(1, 1, 1)
+
+    if closestTarget then
+        love.graphics.setShader(LineShader)
+
+        local dir = angle(x, y, closestTarget.x, closestTarget.y)
+        local dist = dist(x, y, closestTarget.x, closestTarget.y)
+
+        LineShader:send("time", time)
+        LineShader:send("scale", dist)
+        love.graphics.draw(SHADOW_IMAGE, x, y, dir - toRad(90), 3, dist)
+        love.graphics.setShader()
+    end
 end
 
 return {

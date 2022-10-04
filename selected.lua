@@ -42,7 +42,7 @@ function createSelected(shape, image, selectedObject, offsetX, offsetY, cost)
                 self.gridX = gridX
                 self.gridY = gridY
                 if self.selectedObject.getAOE then
-                    self.aoe = self.selectedObject.getAOE(gridX, gridY)
+                    self.aoe, self.closestTarget = self.selectedObject.getAOE(gridX, gridY)
                 end
             end
         end,
@@ -73,7 +73,7 @@ function createSelected(shape, image, selectedObject, offsetX, offsetY, cost)
                 love.graphics.draw(self.image, self.x, self.y, 0, self.scale, self.scale, self.halfWidth, self.halfHeight)
 
                 if self.aoe then
-                    drawAOE(self.aoe, self.x, self.y)
+                    drawAOE(self.aoe, self.x, self.y, self.closestTarget)
                 end
 
                 love.graphics.setColor(1, 1, 1)

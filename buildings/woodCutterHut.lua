@@ -14,7 +14,10 @@ return {
     end,
 
     getAOE = function(gridX, gridY)
-        return getGridCircle(gridX, gridY, 5, isTree)
+        local tiles, targets = getGridCircle(gridX, gridY, 5, isTree)
+        local closestTarget = getClosest(gridX * GRID_SIZE, gridY * GRID_SIZE, targets)
+
+        return tiles, closestTarget
     end,
 
     create = function(self, gridX, gridY)
@@ -22,7 +25,7 @@ return {
 
         building.title = self:getTitle()
         building.description = self:getDescription()
-        building.aoe = self.getAOE(gridX, gridY)
+        building.aoe, building.closestTarget = self.getAOE(gridX, gridY)
         building.shape = {
             {1},
         }
@@ -33,7 +36,7 @@ return {
             parentPostDraw(self)
 
             if self.highlighted == 2 then
-                drawAOE(self.aoe, self.x, self.y)
+                drawAOE(self.aoe, self.x, self.y, self.closestTarget)
             end
         end
 

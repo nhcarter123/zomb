@@ -36,6 +36,7 @@ Farm = require("buildings/farm")
 require("shaders/fowShader")
 require("shaders/outlineShader")
 DropShadowShader = require("shaders/dropShadowShader")
+LineShader = require("shaders/lineShader")
 
 require("selected")
 
@@ -884,14 +885,11 @@ function love.update(dt)
                 SELECT_ORIGIN_Y = worldMy
 
                 if SHIFT_IS_DOWN then
-                    for i = 1, #SELECTED_TILES do
+                    for i = #SELECTED_TILES, 1, -1 do
                         local tile = SELECTED_TILES[i]
                         if not contains(SAVED_SELECTED_TILES, tile) then
                             table.insert(SAVED_SELECTED_TILES, tile)
                         end
-                    end
-                    for i = 1, #SAVED_SELECTED_TILES do
-                        SAVED_SELECTED_TILES[i].building.highlighted = 1
                     end
                 else
                     for i = 1, #SAVED_SELECTED_TILES do
@@ -907,20 +905,44 @@ function love.update(dt)
                 SELECTED_TILES = {}
 
                 if HOVERED_TILE.building then
-                    table.insert(SELECTED_TILES, HOVERED_TILE)
+                    if SHIFT_IS_DOWN and HOVERED_TILE.building.highlighted then
+                        for i = #SAVED_SELECTED_TILES, 1, -1 do
+                            local tile = SAVED_SELECTED_TILES[i]
+                            if tile == HOVERED_TILE then
+                                table.remove(SAVED_SELECTED_TILES, i)
+                                tile.building.highlighted = nil
+                            end
+                        end
 
-                    if #SELECTED_TILES == 1 and #SAVED_SELECTED_TILES == 0 then
-                        HOVERED_TILE.building.highlighted = 2
-                        DescriptionPanel:setVisible(true)
-                        DescriptionPanel:setInfo(
-                            HOVERED_TILE.building.title,
-                            HOVERED_TILE.building.description,
-                            nil,
-                            HOVERED_TILE.building:getStats()
-                        )
+                        if #SAVED_SELECTED_TILES == 1 then
+                            local tile = SAVED_SELECTED_TILES[1]
+                            tile.building.highlighted = 2
+                            DescriptionPanel:setVisible(true)
+                            DescriptionPanel:setInfo(
+                                tile.building.title,
+                                tile.building.description,
+                                nil,
+                                tile.building:getStats()
+                            )
+                        else
+                            DescriptionPanel:setVisible(false)
+                        end
                     else
-                        HOVERED_TILE.building.highlighted = 1
-                        DescriptionPanel:setVisible(false)
+                        table.insert(SELECTED_TILES, HOVERED_TILE)
+
+                        if #SELECTED_TILES == 1 and #SAVED_SELECTED_TILES == 0 then
+                            HOVERED_TILE.building.highlighted = 2
+                            DescriptionPanel:setVisible(true)
+                            DescriptionPanel:setInfo(
+                                HOVERED_TILE.building.title,
+                                HOVERED_TILE.building.description,
+                                nil,
+                                HOVERED_TILE.building:getStats()
+                            )
+                        else
+                            HOVERED_TILE.building.highlighted = 1
+                            DescriptionPanel:setVisible(false)
+                        end
                     end
                 else
                     DescriptionPanel:setVisible(false)
@@ -1004,13 +1026,6 @@ function love.update(dt)
 --        end
 --        return 0
 --    end)
-
-    for i = #playerUnits, 1, -1 do
-        local shouldDelete = playerUnits[i]:update(dt, time)
-        if shouldDelete then
-            table.remove(playerUnits, i)
-        end
-    end
 
     for i = #enemyUnits, 1, -1 do
         local shouldDelete = enemyUnits[i]:update(dt, i)
