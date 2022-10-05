@@ -11,7 +11,7 @@ getGridCircle = function(gridX, gridY, r, validFn)
                 local x = gridX + i
                 local y = gridY + j
                 if x >= -GRID_TILES and x <= GRID_TILES and y >= -GRID_TILES and y <= GRID_TILES then
-                    if validFn(grid[x][y]) then
+                    if grid[x] and validFn and validFn(grid[x][y]) then
                         isValid = true
                         table.insert(targets, grid[x][y].building)
                     end
@@ -25,40 +25,13 @@ getGridCircle = function(gridX, gridY, r, validFn)
     return tiles, targets
 end
 
-drawAOE = function(aoe, x, y, closestTarget)
-    for i = 1, #aoe do
-        local tile = aoe[i]
-
-        if tile[3] then
-            love.graphics.setColor(1, 1, 1, 0.42)
-        else
-            love.graphics.setColor(1, 1, 1, 0.1)
-        end
-
-        love.graphics.rectangle("fill", x + (tile[1] - 0.5) * GRID_SIZE + 2, y + (tile[2] - 0.5) * GRID_SIZE + 2, GRID_SIZE - 4, GRID_SIZE - 4)
-    end
-
-
-    love.graphics.setColor(1, 1, 1)
-
-    if closestTarget then
-        love.graphics.setShader(LineShader)
-
-        local dir = angle(x, y, closestTarget.x, closestTarget.y)
-        local dist = dist(x, y, closestTarget.x, closestTarget.y)
-
-        LineShader:send("time", time)
-        LineShader:send("scale", dist)
-        love.graphics.draw(SHADOW_IMAGE, x, y, dir - toRad(90), 3, dist)
-        love.graphics.setShader()
-    end
-end
-
 return {
     create = function(gridX, gridY, offsetX, offsetY, image)
         return {
             x = (gridX + offsetX) * GRID_SIZE,
             y = (gridY + offsetY) * GRID_SIZE,
+            offsetX = offsetX,
+            offsetY = offsetY,
             gridX = gridX,
             gridY = gridY,
             image = image,
@@ -69,6 +42,9 @@ return {
             originY = image:getHeight() / 2,
             imageHeight = image:getHeight(),
             shape = {{1}},
+
+            title = "Wood wall",
+            description = "Cheap protection that stops zombies in their tracks",
 
             update = function(self)
                 if self.health <= 0 then
@@ -161,11 +137,11 @@ return {
                 end
             end,
 
-            setWallImages = function(self, gridX, gridY)
+            setWallImages = function(self)
                 for i = -1, 1 do
                     for j = -1, 1 do
-                        local x = gridX + i
-                        local y = gridY + j
+                        local x = self.gridX + i
+                        local y = self.gridY + j
                         if x >= -GRID_TILES and x <= GRID_TILES and y >= -GRID_TILES and y <= GRID_TILES then
                             local building = grid[x][y].building
 
@@ -176,6 +152,39 @@ return {
                     end
                 end
             end,
+
+            drawAOE = function(self)
+                for i = 1, #self.aoe do
+                    local tile = self.aoe[i]
+
+                    if tile[3] then
+                        love.graphics.setColor(1, 1, 1, 0.42)
+                    else
+                        love.graphics.setColor(1, 1, 1, 0.1)
+                    end
+
+                    love.graphics.rectangle("fill", self.x + (tile[1] - 0.5) * GRID_SIZE + 2, self.y + (tile[2] - 0.5) * GRID_SIZE + 2, GRID_SIZE - 4, GRID_SIZE - 4)
+                end
+
+
+                love.graphics.setColor(1, 1, 1)
+
+                if self.closestTarget then
+                    love.graphics.setShader(LineShader)
+
+                    local dir = angle(self.x, self.y, self.closestTarget.x, self.closestTarget.y)
+                    local dist = dist(self.x, self.y, self.closestTarget.x, self.closestTarget.y)
+
+                    LineShader:send("time", time)
+                    LineShader:send("scale", dist)
+                    love.graphics.draw(SHADOW_IMAGE, self.x, self.y, dir - toRad(90), 3, dist)
+                    love.graphics.setShader()
+                end
+            end,
+
+            init = function(self)
+                self:setGrid()
+            end
         }
     end
 }

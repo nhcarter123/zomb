@@ -1,18 +1,10 @@
 return {
-    getTitle = function()
-        return "Storage shed"
-    end,
-
-    getDescription = function()
-        return "Stores resources"
-    end,
-
-    create = function(self, gridX, gridY)
+    create = function(gridX, gridY)
         local building = Building.create(gridX, gridY, 0.5, 0.5, STORAGE_ROOF_IMAGE)
 
+        building.title = "Storage shed"
+        building.description = "Stores resources"
         building.totalStorage = 60
-        building.title = self:getTitle()
-        building.description = self:getDescription()
         building.alpha = 0.25
         building.scale = 0.51
         building.shape = {
@@ -68,8 +60,12 @@ return {
             MAX_FOOD = MAX_FOOD + self.totalStorage - usedStorage
         end
 
-        building:updateStorage()
-        building:setGrid()
+
+        local parentInit = building.init
+        building.init = function(self)
+            parentInit(self)
+            self:updateStorage()
+        end
 
         return building
     end

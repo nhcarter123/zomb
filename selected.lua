@@ -1,4 +1,5 @@
-function createSelected(shape, image, selectedObject, offsetX, offsetY, cost)
+function createSelected(createFn, cost)
+    local obj = createFn(0, 0)
     local canAfford = true
     for i = 1, #cost do
         local type = cost[i][1]
@@ -14,16 +15,9 @@ function createSelected(shape, image, selectedObject, offsetX, offsetY, cost)
     end
 
     local selected = {
-        image = image,
-        halfWidth = image:getWidth() / 2,
-        halfHeight = image:getHeight() / 2,
-        shape = shape,
-        selectedObject = selectedObject,
-        gridX = 0,
-        gridY = 0,
-        scale = 1,
-        offsetX = offsetX,
-        offsetY = offsetY,
+        obj = obj,
+        halfWidth = obj.image:getWidth() / 2,
+        halfHeight = obj.image:getHeight() / 2,
         canPlace = false,
         canAfford = canAfford,
         cost = cost,
@@ -34,15 +28,22 @@ function createSelected(shape, image, selectedObject, offsetX, offsetY, cost)
             local gridX = toGridSpace(worldMx)
             local gridY = toGridSpace(worldMy)
 
-            self.x = (gridX + self.offsetX) * GRID_SIZE
-            self.y = (gridY + self.offsetY) * GRID_SIZE
+            if gridX ~= self.gridX or gridY ~= self.gridY or not self.visible then
+                self.visible = true
+                self.canPlace = not doesOverlap(gridX, gridY, self.obj.shape) and self.canAfford
 
-            if gridX ~= self.gridX or gridY ~= self.gridY then
-                self.canPlace = not doesOverlap(gridX, gridY, self.shape) and self.canAfford
-                self.gridX = gridX
-                self.gridY = gridY
-                if self.selectedObject.getAOE then
-                    self.aoe, self.closestTarget = self.selectedObject.getAOE(gridX, gridY)
+                if self.canPlace then
+                    self.obj.x = (gridX + self.obj.offsetX) * GRID_SIZE
+                    self.obj.y = (gridY + self.obj.offsetY) * GRID_SIZE
+                else
+                    self.obj.x = worldMx + self.obj.offsetX * GRID_SIZE
+                    self.obj.y = worldMy + self.obj.offsetY * GRID_SIZE
+                end
+
+                self.obj.gridX = gridX
+                self.obj.gridY = gridY
+                if self.obj.getAOE then
+                    self.obj:getAOE()
                 end
             end
         end,
@@ -58,22 +59,25 @@ function createSelected(shape, image, selectedObject, offsetX, offsetY, cost)
                     end
                 end
 
-                local building = self.selectedObject:create(self.gridX, self.gridY)
-                table.insert(buildings, building)
-                self.aoe = building.aoe
+                table.insert(buildings, self.obj)
+                self.visible = false
+                self.obj:init()
+                self.obj = createFn(0, 0)
             end
         end,
 
         draw = function(self)
-            if self.x ~= nil then
+            if self.visible then
                 if not self.canPlace then
-                    love.graphics.setColor(1, 0.8, 0.8, 0.5)
+                    love.graphics.setColor(1, 0.7, 0.7, 0.6)
+                else
+                    love.graphics.setColor(1, 1, 1, 0.6)
                 end
 
-                love.graphics.draw(self.image, self.x, self.y, 0, self.scale, self.scale, self.halfWidth, self.halfHeight)
+                love.graphics.draw(self.obj.image, self.obj.x, self.obj.y, 0, self.obj.scale, self.obj.scale, self.halfWidth, self.halfHeight)
 
-                if self.aoe then
-                    drawAOE(self.aoe, self.x, self.y, self.closestTarget)
+                if self.obj.getAOE and self.canPlace then
+                    self.obj:drawAOE()
                 end
 
                 love.graphics.setColor(1, 1, 1)

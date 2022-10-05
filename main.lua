@@ -261,13 +261,15 @@ function love.load()
             love.graphics.rectangle("line", (i + GRID_TILES) * tileSize, (j + GRID_TILES) * tileSize, tileSize, tileSize)
 
             if treeNoise > 0.8 then
-                local building = Tree:create(i, j)
+                local building = Tree.create(i, j)
                 table.insert(buildings, building)
+                building:init()
             end
 
             if rockNoise > 0.93 then
-                local building = Rock:create(i, j)
+                local building = Rock.create(i, j)
                 table.insert(buildings, building)
+                building:init()
 --                love.graphics.setCanvas(GRASS_CANVAS)
 --                if math.random() > 0.5 then
 --                    love.graphics.draw(ROCK_2_IMAGE, (i + GRID_TILES) * GRID_SIZE, (j + GRID_TILES) * GRID_SIZE, 0, 0.5, 0.5, 0, 0)
@@ -285,8 +287,12 @@ function love.load()
     love.graphics.setCanvas()
 
 
-    table.insert(buildings, House:create(-2, 0))
-    table.insert(buildings, Storage:create(3, 0))
+    local house = House.create(-2, 0)
+    house:init()
+    table.insert(buildings,house )
+    local storage = Storage.create(3, 0)
+    storage:init()
+    table.insert(buildings, storage)
 
     cam:setScale(targetScale)
 
@@ -1092,7 +1098,7 @@ function love.update(dt)
             then
                 if not thisButtonHovered then
                     HOVERED_BUTTON = button
-                    DescriptionPanel:setInfo(button.title, button.description, button.cost)
+                    DescriptionPanel:setInfo(button.obj.title, button.obj.description, button.cost, button.obj:getStats())
                     DescriptionPanel:setVisible(true)
                 end
             elseif thisButtonHovered then

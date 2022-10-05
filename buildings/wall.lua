@@ -1,29 +1,13 @@
 return {
-    getTitle = function()
-        return "Wood wall"
-    end,
-
-    getDescription = function()
-        return "Cheap protection that stops zombies in their tracks"
-    end,
-
-    create = function(self, gridX, gridY)
+    create = function(gridX, gridY)
         local building = Building.create(gridX, gridY, 0, 0, WALL_PIECE_1_IMAGE)
 
+        building.title = "Wood wall"
+        building.description =  "Cheap protection that stops enemies in their tracks"
         building.isWall = true
         building.scale = 0.54
-        building.title = self:getTitle()
-        building.description = self:getDescription()
         building.health = 150
         building.maxHealth = 150
-
-        local parentUpdate = building.update
-        building.update = function(self)
-            if parentUpdate(self) then
-                self:setWallImages(self.gridX, self.gridY)
-                return true
-            end
-        end
 
         building.setImage = function(self)
             local canvas = love.graphics.newCanvas(256)
@@ -86,8 +70,11 @@ return {
             self.originY = tileSize / 2
         end
 
-        building:setGrid()
-        building:setWallImages(gridX, gridY)
+        local parentInit = building.init
+        building.init = function(self)
+            parentInit(self)
+            self:setWallImages()
+        end
 
         return building
     end

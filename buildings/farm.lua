@@ -1,20 +1,13 @@
 return {
-    getTitle = function()
-        return "Farm"
-    end,
-
-    getDescription = function()
-        return "Grows food"
-    end,
-
-    create = function(self, gridX, gridY)
+    create = function(gridX, gridY)
         local building = Building.create(gridX, gridY, 0.5, 0.5, FARM_IMAGE)
 
-        building.title = self:getTitle()
-        building.description = self:getDescription()
+        building.title = "Farm"
+        building.description = "Grows food"
         building.cropGrowth = 0
         building.cropGrowthRate = 1
         building.cropGrowthTotal = 4
+        building.harvestYield = 8
         building.cropWidth = 80
         building.cropHeight = 16
         building.scale = 0.5
@@ -48,13 +41,12 @@ return {
 
         building.getStats = function(self)
             return {
-                "Growth: "..tostring(self.cropGrowth),
                 "Growth rate: "..tostring(self.cropGrowthRate).." / day",
-                "Maturity growth: "..tostring(self.cropGrowthTotal)
+                "Growth: "..tostring(self.cropGrowth),
+                "Maturity growth: "..tostring(self.cropGrowthTotal),
+                "Food per harvest: "..tostring(self.harvestYield)
             }
         end
-
-        building:setGrid()
 
         return building
     end

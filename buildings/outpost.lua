@@ -1,19 +1,11 @@
 return {
-    getTitle = function()
-        return "Tower"
-    end,
-
-    getDescription = function()
-        return "Attacks nearby zombies"
-    end,
-
-    create = function(self, gridX, gridY)
+    create = function(gridX, gridY)
         local building = Building.create(gridX, gridY, 0, 0, TOWER_IMAGE)
         local searchDuration = 2
 
-        building.state= "Sentry"
-        building.title = self:getTitle()
-        building.description = self:getDescription()
+        building.title = "Tower"
+        building.description = "Attacks nearby enemies"
+        building.state = "Sentry"
         building.connectsWithWall = true
         building.searchDuration = searchDuration
         building.searchCount = math.random() * searchDuration
@@ -22,6 +14,11 @@ return {
         building.shape = {
             {1},
         }
+
+        building.getAOE = function(self)
+            local tiles, targets = getGridCircle(self.gridX, self.gridY, 8)
+            self.aoe = tiles
+        end
 
         local parentUpdate = building.update
 
@@ -83,8 +80,22 @@ return {
             end
         end
 
-        building:setGrid()
-        building:setWallImages(gridX, gridY)
+        local parentPostDraw = building.postDraw
+        building.postDraw = function(self)
+            parentPostDraw(self)
+
+            if self.highlighted == 2 then
+                self:drawAOE()
+            end
+        end
+
+        local parentInit = building.init
+        building.init = function(self)
+            parentInit(self)
+            self:setWallImages()
+        end
+
+        building:getAOE()
 
         return building
     end

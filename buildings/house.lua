@@ -1,25 +1,20 @@
 return {
-    getTitle = function()
-        return "House"
-    end,
-
-    getDescription = function()
-        return "Houses 4 people"
-    end,
-
-    create = function(self, gridX, gridY)
+    create = function(gridX, gridY)
         local building = Building.create(gridX, gridY, 0, 0.5, HOUSE_2_IMAGE)
 
-        building.title = self:getTitle()
-        building.description = self:getDescription()
+        building.title = "House"
+        building.description = "Houses 4 people"
         building.shape = {
             {1},
             {1}
         }
         building.scale = 0.5
-        building:setGrid()
 
-        MAX_POPULATION = MAX_POPULATION + 4
+        local parentInit = building.init
+        building.init = function(self)
+            parentInit(self)
+            MAX_POPULATION = MAX_POPULATION + 4
+        end
 
         return building
     end

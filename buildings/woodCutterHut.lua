@@ -5,43 +5,45 @@ isTree = function(tile)
 end
 
 return {
-    getTitle = function()
-        return "Wood cutter hut"
-    end,
-
-    getDescription = function()
-        return "Gathers wood from nearby trees"
-    end,
-
-    getAOE = function(gridX, gridY)
-        local tiles, targets = getGridCircle(gridX, gridY, 5, isTree)
-        local closestTarget = getClosest(gridX * GRID_SIZE, gridY * GRID_SIZE, targets)
-
-        return tiles, closestTarget
-    end,
-
-    create = function(self, gridX, gridY)
+    create = function(gridX, gridY)
         local building = Building.create(gridX, gridY, 0, 0, WOOD_CUTTER_HUT_IMAGE)
 
-        building.title = self:getTitle()
-        building.description = self:getDescription()
-        building.aoe, building.closestTarget = self.getAOE(gridX, gridY)
+        building.title = "Wood cutter hut"
+        building.description = "Gathers wood from nearby trees"
         building.shape = {
             {1},
         }
         building.scale = 0.5
+        building.woodProduction = 1
+
+        building.getStats = function(self)
+            local stats = {
+                "Wood production: "..tostring(self.woodProduction).." / day",
+            }
+
+            if self.closestTarget then
+                table.insert(stats, "Current Tree Remaining wood: "..tostring(self.closestTarget.wood))
+            end
+
+            return stats
+        end
+
+        building.getAOE = function(self)
+            local tiles, targets = getGridCircle(self.gridX, self.gridY, 5, isTree)
+            self.closestTarget = getClosest(self.gridX * GRID_SIZE, self.gridY * GRID_SIZE, targets)
+            self.aoe = tiles
+        end
 
         local parentPostDraw = building.postDraw
         building.postDraw = function(self)
             parentPostDraw(self)
 
             if self.highlighted == 2 then
-                drawAOE(self.aoe, self.x, self.y, self.closestTarget)
+                self:drawAOE()
             end
         end
 
-        building:setGrid()
-
+        building:getAOE()
 
         return building
     end,

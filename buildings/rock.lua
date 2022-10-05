@@ -1,13 +1,5 @@
 return {
-    getTitle = function()
-        return "Rock"
-    end,
-
-    getDescription = function()
-        return "A giant boulder"
-    end,
-
-    create = function(self, gridX, gridY)
+    create = function(gridX, gridY)
         local image = ROCK_4_IMAGE
         local rand = math.random()
 
@@ -21,15 +13,14 @@ return {
 
         local building = Building.create(gridX, gridY, 0, 0, image)
 
-        building.title = self:getTitle()
-        building.description = self:getDescription()
+        building.title = "Rock"
+        building.description = "A giant boulder"
         building.isRock = true
 --        building.angle = toRad(math.random() * 360)
         --    building.scale = 1
         --    building.scale = 0.16 + math.random() * 0.02
 --        building.scale = 0.42 + math.random() * 0.15
         building.scale = 0.38 + math.random() * 0.08
-        building:setGrid()
 
         return building
     end
