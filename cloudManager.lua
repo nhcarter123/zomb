@@ -50,7 +50,7 @@ local CloudManager = {
     update = function(self, dt)
         local cloudSpeed = dt * 10
 
-        if DayManager.isTransitioning then
+        if TimeManager.isTransitioning then
             cloudSpeed = cloudSpeed * 120
         end
 
@@ -84,7 +84,7 @@ local CloudManager = {
             local camAlpha = math.pow(distToCam + 1100, 2) / 2000000
 
             love.graphics.setColor(0, 0, 0, 0.06 * camAlpha)
-            love.graphics.draw(cloud.image, cloud.x - DayManager.shadowLength * 1500, cloud.y + DayManager.shadowLength * 1500, cloud.angle, 14 / camFactor, 14 / camFactor, cloud.originX, cloud.originY)
+            love.graphics.draw(cloud.image, cloud.x - TimeManager.shadowLength * 1500, cloud.y + TimeManager.shadowLength * 1500, cloud.angle, 14 / camFactor, 14 / camFactor, cloud.originX, cloud.originY)
             love.graphics.setColor(1, 1, 1, cloud.alpha * camAlpha)
             love.graphics.draw(cloud.image, visibleX, visibleY, cloud.angle,
                 cloud.scale * 10 / camFactor,

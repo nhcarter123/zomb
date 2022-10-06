@@ -1,3 +1,19 @@
+setWorkers = function()
+    local count = POPULATION
+
+    for i = 1, #buildings do
+        local building = buildings[i]
+        if building.needsWorker then
+            if count > 0 then
+                count = count - 1
+                building.noWorker = false
+            else
+                building.noWorker = true
+            end
+        end
+    end
+end
+
 getGridCircle = function(gridX, gridY, r, validFn)
     local radius = r
     local tiles = {}
@@ -42,9 +58,11 @@ return {
             originY = image:getHeight() / 2,
             imageHeight = image:getHeight(),
             shape = {{1}},
+            barHeight = 8,
+            xPadding = 6,
 
             title = "Wood wall",
-            description = "Cheap protection that stops zombies in their tracks",
+            description = "Cheap protection that stops enemies in their tracks",
 
             update = function(self)
                 if self.health <= 0 then
@@ -95,9 +113,45 @@ return {
                 end
             end,
 
+            postDraw = function(self)
+                if self.health < self.maxHealth then
+                    local healthBarWidth = 40
+                    local healthBarHeight = 8
+                    local offsetY = 20
+                    local percentHealth = self.health / self.maxHealth
+                    love.graphics.setColor(0.2, 0.2, 0.2)
+                    love.graphics.rectangle("fill", self.x - healthBarWidth / 2, self.y + offsetY, healthBarWidth, healthBarHeight)
+                    love.graphics.setColor(0.2, 0.9, 0.2)
+                    love.graphics.rectangle("fill", self.x - healthBarWidth / 2 + 1, self.y + offsetY - 1, healthBarWidth * percentHealth - 2, healthBarHeight - 2)
+                    love.graphics.setColor(1, 1, 1)
+                end
+
+                if self.pct and not self.noWorker then
+                    love.graphics.setColor(0.2, 0.2, 0.2, 1)
+                    love.graphics.rectangle("fill", self.x - self.originX / 2 + self.xPadding, self.y - self.barHeight / 2 + self.originY / 2, self.originX - self.xPadding * 2, self.barHeight)
+                    love.graphics.setColor(0.7, 0.7, 0.7, 1)
+                    love.graphics.rectangle(
+                        "fill",
+                        self.x - self.originX / 2 + 2 + self.xPadding,
+                        self.y + 2 - self.barHeight / 2 + self.originY / 2,
+                        self.pct * (self.originX - 4 - self.xPadding * 2),
+                        self.barHeight - 4
+                    )
+                    love.graphics.setColor(1, 1, 1)
+                end
+
+                if self.noWorker then
+                    love.graphics.rectangle("fill", self.x, self.y, 10, 10)
+                end
+            end,
+
             getStats = function(self)
                 return nil
             end,
+
+--            nextDay = function(self)
+--                return nil
+--            end,
 
             --        getOpenNeighborTilePos = function(self)
             --            for j = 0, #self.shape - 1 do
@@ -122,20 +176,6 @@ return {
             --                end
             --            end
             --        end,
-
-            postDraw = function(self)
-                if self.health < self.maxHealth then
-                    local healthBarWidth = 40
-                    local healthBarHeight = 8
-                    local offsetY = 20
-                    local percentHealth = self.health / self.maxHealth
-                    love.graphics.setColor(0.2, 0.2, 0.2)
-                    love.graphics.rectangle("fill", self.x - healthBarWidth / 2, self.y + offsetY, healthBarWidth, healthBarHeight)
-                    love.graphics.setColor(0.2, 0.9, 0.2)
-                    love.graphics.rectangle("fill", self.x - healthBarWidth / 2 + 1, self.y + offsetY - 1, healthBarWidth * percentHealth - 2, healthBarHeight - 2)
-                    love.graphics.setColor(1, 1, 1)
-                end
-            end,
 
             setWallImages = function(self)
                 for i = -1, 1 do

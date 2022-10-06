@@ -4,7 +4,7 @@ function createWallButton()
     local button = createButton(wall, cost)
 
     button.click = function(self)
-        SELECTED = createSelected(Wall.create, cost)
+        SELECTED = Selected.create(Wall.create, cost)
     end
 
     return button
@@ -18,7 +18,7 @@ function createOutpostButton()
     button.baseScale = 0.5
 
     button.click = function(self)
-        SELECTED = createSelected(Tower.create, cost)
+        SELECTED = Selected.create(Tower.create, cost)
     end
 
     return button
@@ -26,12 +26,12 @@ end
 
 function createFarmButton()
     local farm = Farm.create(0, 0)
-    local cost =  {{ "Wood", 3 }, { "Food", 3 }}
+    local cost =  {{ "Wood", 5 }}
     local button = createButton(farm, cost)
 
     button.baseScale = 0.25
     button.click = function(self)
-        SELECTED = createSelected(Farm.create, cost)
+        SELECTED = Selected.create(Farm.create, cost)
     end
 
     return button
@@ -45,7 +45,7 @@ function createStorageButton()
     button.baseScale = 0.25
 
     button.click = function(self)
-        SELECTED = createSelected(Storage.create, cost)
+        SELECTED = Selected.create(Storage.create, cost)
     end
 
     return button
@@ -58,7 +58,7 @@ function createHouseButton()
 
     button.baseScale = 0.25
     button.click = function(self)
-        SELECTED = createSelected(House.create, cost)
+        SELECTED = Selected.create(House.create, cost)
     end
 
     return button
@@ -71,7 +71,7 @@ function createWoodCutterHutButton()
 
     button.baseScale = 0.5
     button.click = function(self)
-        SELECTED = createSelected(WoodCutterHut.create, cost)
+        SELECTED = Selected.create(WoodCutterHut.create, cost)
     end
 
     return button

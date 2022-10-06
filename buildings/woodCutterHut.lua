@@ -14,11 +14,15 @@ return {
             {1},
         }
         building.scale = 0.5
-        building.woodProduction = 1
+        building.progress = 0
+        building.updateRate = 1
+        building.completeAmount = 1
+        building.harvestYield = 1
+        building.needsWorker = true
 
         building.getStats = function(self)
             local stats = {
-                "Wood production: "..tostring(self.woodProduction).." / day",
+                "Wood production: "..tostring(self.updateRate).." / hour",
             }
 
             if self.closestTarget then
@@ -42,6 +46,42 @@ return {
                 self:drawAOE()
             end
         end
+
+        local parentUpdate = building.update
+        building.update = function(self, dt)
+            if parentUpdate(self) then
+                return true
+            end
+
+            if self.closestTarget and not self.noWorker then
+                if self.closestTarget.wood <= 0 then
+                    self:getAOE()
+                    self.progress = 0
+                end
+
+                self.progress = self.progress + self.updateRate * dt
+                self.pct = self.progress / self.completeAmount
+
+                if self.pct >= 1 then
+                    self.progress = 0
+                    local deltaWood = math.min(self.harvestYield, self.closestTarget.wood)
+                    self.closestTarget.wood = self.closestTarget.wood - deltaWood
+                    WOOD = WOOD + deltaWood
+
+                    if self.closestTarget.wood == 0 then
+                        self.closestTarget.health = 0
+                    end
+                end
+            end
+        end
+
+--        building.nextDay = function(self)
+--            if self.closestTarget and self.closestTarget.wood > 0 then
+--                local deltaWood = math.min(self.woodProduction, self.closestTarget.wood)
+--                self.closestTarget.wood = self.closestTarget.wood - deltaWood
+--                WOOD = WOOD + deltaWood
+--            end
+--        end
 
         building:getAOE()
 

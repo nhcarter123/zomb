@@ -4,12 +4,13 @@ return {
 
         building.title = "Farm"
         building.description = "Grows food"
-        building.cropGrowth = 0
-        building.cropGrowthRate = 1
-        building.cropGrowthTotal = 4
-        building.harvestYield = 8
-        building.cropWidth = 80
-        building.cropHeight = 16
+
+        building.progress = 0
+        building.updateRate = 1
+        building.completeAmount = 4
+        building.harvestYield = 1
+        building.needsWorker = true
+
         building.scale = 0.5
         building.drawShadow = function() end
         building.shape = {
@@ -17,35 +18,30 @@ return {
             {1, 1},
         }
 
-        local parentDraw = building.draw
-
-        building.draw = function(self)
-            parentDraw(self)
-
-            local pct = self.cropGrowth / self.cropGrowthTotal
-
-            if self.highlighted == 2 then
-                love.graphics.setColor(0.2, 0.2, 0.2)
-                love.graphics.rectangle("fill", self.x - self.cropWidth / 2, self.y - self.cropHeight / 2, self.cropWidth, self.cropHeight)
-                love.graphics.setColor(0.5, 0.75, 0.5)
-                love.graphics.rectangle(
-                    "fill",
-                    self.x - self.cropWidth / 2 + pct * self.cropWidth / 2 + 2,
-                    self.y + 2 - self.cropHeight / 2,
-                    math.max(pct, 0.05) * (self.cropWidth - 4),
-                    self.cropHeight - 4
-                )
-                love.graphics.setColor(1, 1, 1)
-            end
-        end
-
         building.getStats = function(self)
             return {
-                "Growth rate: "..tostring(self.cropGrowthRate).." / day",
-                "Growth: "..tostring(self.cropGrowth),
-                "Maturity growth: "..tostring(self.cropGrowthTotal),
+                "Growth rate: "..tostring(self.updateRate).." / hour",
+                "Growth: "..tostring(roundDecimal(self.progress, 2)),
+                "Maturity Growth: "..tostring(self.completeAmount),
                 "Food per harvest: "..tostring(self.harvestYield)
             }
+        end
+
+        local parentUpdate = building.update
+        building.update = function(self, dt)
+            if parentUpdate(self) then
+                return true
+            end
+
+            if not self.noWorker then
+                self.progress = self.progress + self.updateRate * dt
+                self.pct = self.progress / self.completeAmount
+
+                if self.pct >= 1 then
+                    self.progress = 0
+                    FOOD = FOOD + self.harvestYield
+                end
+            end
         end
 
         return building

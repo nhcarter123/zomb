@@ -38,10 +38,10 @@ require("shaders/outlineShader")
 DropShadowShader = require("shaders/dropShadowShader")
 LineShader = require("shaders/lineShader")
 
-require("selected")
+Selected = require("selected")
 
 DescriptionPanel = require("descriptionPanel")
-DayManager = require("dayManager")
+TimeManager = require("TimeManager")
 CloudManager = require("cloudManager")
 
 gamera = require("gamera")
@@ -99,8 +99,8 @@ MAX_FOOD = 0
 MAX_HAPPINESS = 100
 
 POPULATION = 4
-WOOD = 30000--30
-FOOD = 30000--20
+WOOD = 30
+FOOD = 20
 HAPPINESS = 50
 
 
@@ -301,36 +301,35 @@ function love.load()
     OUTLINE_SHADER:send("opacity", 0.7)
     OUTLINE_SHADER:send("stepSize", { outlineThickness, outlineThickness })
 
---    FOW_SHADER = createFOWShader()
+    FOW_SHADER = createFOWShader()
 
     calculateGrid()
 
-    DayManager:setShadowLength()
+    TimeManager:setShadowLength()
 
     CloudManager:init()
 end
 
 function calculateGrid()
---    local lights = {}
---    for i = #buildings, 1, -1 do
---        local building = buildings[i]
---        if not building.isWall then
---            table.insert(lights, {building.x / SHADOW_SIZE + 0.5, building.y / SHADOW_SIZE + 0.5})
---        end
---    end
---    FOW_SHADER:send("lights", unpack(lights) or {0, 0})
+    local lights = {}
+    for i = #buildings, 1, -1 do
+        local building = buildings[i]
+        if not building.isWall and not building.isTree and not building.isRock then
+            table.insert(lights, {building.x / SHADOW_SIZE + 0.5, building.y / SHADOW_SIZE + 0.5})
+        end
+    end
+
+--    love
+
+    FOW_SHADER:send("lights", unpack(lights))
 
 --    local lights = {}
---    local shadows = {}
---    local positions = {}
+--
 --    for i = #buildings, 1, -1 do
 --        local building = buildings[i]
---        if not building.isWall and not building.isTree then
---            table.insert(lights, {building.x / SHADOW_SIZE + 0.5, building.y / SHADOW_SIZE + 0.5})
+--        if not building.isWall and not building.isTree and not building.isRock then
+--            table.insert(lights, { building.x / SHADOW_SIZE + 0.5, building.y / SHADOW_SIZE + 0.5 })
 --        end
---
---        table.insert(shadows, building.image)
---        table.insert(positions, { building.x, building.y, 2 * building.scale * building.originX / GRID_SIZE, 2 * building.scale * building.originY / GRID_SIZE })
 --    end
 --    FOW_SHADER:send("lights", unpack(lights) or {0, 0})
 --
@@ -676,17 +675,18 @@ function love.keypressed(key, scancode, isrepeat)
     end
 
     if key == "space" then
-        DayManager:nextDay()
+--        TimeManager:nextDay()
+        TimeManager.paused = not TimeManager.paused
     end
 
     if key == "right" then
-        DayManager.shadowLength = DayManager.shadowLength - 0.01
-        DropShadowShader:send("shadowLength", DayManager.shadowLength)
+        TimeManager.shadowLength = TimeManager.shadowLength - 0.01
+        DropShadowShader:send("shadowLength", TimeManager.shadowLength)
     end
 
     if key == "left" then
-        DayManager.shadowLength = DayManager.shadowLength + 0.01
-        DropShadowShader:send("shadowLength", DayManager.shadowLength)
+        TimeManager.shadowLength = TimeManager.shadowLength + 0.01
+        DropShadowShader:send("shadowLength", TimeManager.shadowLength)
     end
 
     if key == "lshift" then
@@ -772,10 +772,14 @@ function love.mousereleased(x, y, button, istouch)
 end
 
 function love.update(dt)
+    local gameDt = TimeManager:update(dt)
+
     time = time + dt
 
     if GRID_DIRTY then
         GRID_DIRTY = false
+        -- Maybe a better place to put this
+        setWorkers()
         calculateGrid()
     end
     processField()
@@ -790,8 +794,7 @@ function love.update(dt)
         SELECTED:update()
     end
 
-    DayManager:update(dt)
-    CloudManager:update(dt)
+    CloudManager:update(gameDt)
 
     -- Border Pan
 --    local xDiff = (love.graphics.getWidth() / 2 - mx) / love.graphics.getWidth()
@@ -860,32 +863,32 @@ function love.update(dt)
     end
 
     if mouseDown then
-        if MB1_CLICKED then
-            local clickedOnNothing = true
+        local mouseOverUi = false
 
-            if SELECTED then
-                clickedOnNothing = false
-            end
-
-            if SELECTED_TAB then
-                for i = 1, #SELECTED_TAB.buttons do
-                    local button = SELECTED_TAB.buttons [i]
-                    if button == HOVERED_BUTTON then
+        if SELECTED_TAB then
+            for i = 1, #SELECTED_TAB.buttons do
+                local button = SELECTED_TAB.buttons [i]
+                if button == HOVERED_BUTTON then
+                    if MB1_CLICKED then
                         button:click()
-                        clickedOnNothing = false
                     end
+                    mouseOverUi = true
                 end
             end
+        end
 
-            for i = 1, #TABS do
-                local tab = TABS[i]
-                if tab.hovered then
+        for i = 1, #TABS do
+            local tab = TABS[i]
+            if tab.hovered then
+                if MB1_CLICKED then
                     tab:click()
-                    clickedOnNothing = false
                 end
+                mouseOverUi = true
             end
+        end
 
-            if clickedOnNothing then
+        if MB1_CLICKED then
+            if not mouseOverUi and not SELECTED then
                 SELECTED_TAB = nil
                 SELECT_ORIGIN_X = worldMx
                 SELECT_ORIGIN_Y = worldMy
@@ -924,12 +927,7 @@ function love.update(dt)
                             local tile = SAVED_SELECTED_TILES[1]
                             tile.building.highlighted = 2
                             DescriptionPanel:setVisible(true)
-                            DescriptionPanel:setInfo(
-                                tile.building.title,
-                                tile.building.description,
-                                nil,
-                                tile.building:getStats()
-                            )
+                            DescriptionPanel:setInfo(tile.building)
                         else
                             DescriptionPanel:setVisible(false)
                         end
@@ -939,12 +937,7 @@ function love.update(dt)
                         if #SELECTED_TILES == 1 and #SAVED_SELECTED_TILES == 0 then
                             HOVERED_TILE.building.highlighted = 2
                             DescriptionPanel:setVisible(true)
-                            DescriptionPanel:setInfo(
-                                HOVERED_TILE.building.title,
-                                HOVERED_TILE.building.description,
-                                nil,
-                                HOVERED_TILE.building:getStats()
-                            )
+                            DescriptionPanel:setInfo(HOVERED_TILE.building)
                         else
                             HOVERED_TILE.building.highlighted = 1
                             DescriptionPanel:setVisible(false)
@@ -968,7 +961,7 @@ function love.update(dt)
 
 
         if SELECTED then
-            if mouseMovedTiles or MB1_CLICKED then
+            if (mouseMovedTiles or MB1_CLICKED) and not mouseOverUi then
                 SELECTED:click()
             end
         elseif SELECT_ORIGIN_X then
@@ -1034,7 +1027,7 @@ function love.update(dt)
 --    end)
 
     for i = #enemyUnits, 1, -1 do
-        local shouldDelete = enemyUnits[i]:update(dt, i)
+        local shouldDelete = enemyUnits[i]:update(gameDt, i)
         if shouldDelete then
             table.remove(enemyUnits, i)
         end
@@ -1043,7 +1036,7 @@ function love.update(dt)
     love.graphics.setCanvas(DEBRIS_CANVAS)
     for i = #bullets, 1, -1 do
         local bullet = bullets[i]
-        local shouldDelete = bullet:update(dt)
+        local shouldDelete = bullet:update(gameDt)
         if shouldDelete then
             if bullet.ammo.hitImage and not bullet.isHit then
                 love.graphics.draw(bullet.ammo.hitImage,
@@ -1059,15 +1052,14 @@ function love.update(dt)
     love.graphics.setCanvas()
 
     for i = #explosions, 1, -1 do
-        local shouldDelete = explosions[i]:update(dt)
+        local shouldDelete = explosions[i]:update(gameDt)
         if shouldDelete then
             table.remove(explosions, i)
         end
     end
 
-    -- optimize
     for i = #buildings, 1, -1 do
-        local shouldDelete = buildings[i]:update(dt)
+        local shouldDelete = buildings[i]:update(gameDt)
         if shouldDelete then
             table.remove(buildings, i)
         end
@@ -1098,7 +1090,7 @@ function love.update(dt)
             then
                 if not thisButtonHovered then
                     HOVERED_BUTTON = button
-                    DescriptionPanel:setInfo(button.obj.title, button.obj.description, button.cost, button.obj:getStats())
+                    DescriptionPanel:setInfo(button.obj, button.cost)
                     DescriptionPanel:setVisible(true)
                 end
             elseif thisButtonHovered then
@@ -1147,10 +1139,6 @@ local function drawCameraStuff(l,t,w,h)
         0, DEBRIS_CANVAS_SCALE, DEBRIS_CANVAS_SCALE)
 
     -- Draw grid
-
---    love.graphics.setShader(FOW_SHADER) --draw something here
---    love.graphics.draw(SHADOW_IMAGE, -SHADOW_SIZE / 2, -SHADOW_SIZE / 2, 0, SHADOW_SIZE, SHADOW_SIZE)
---    love.graphics.setShader()
 
     if SELECTED then
         local scale = math.min(cam:getScale() / 2 - 0.1, 0.25)
@@ -1227,12 +1215,16 @@ local function drawCameraStuff(l,t,w,h)
 
     local currentX, currentY = cam:getPosition()
     CloudManager:draw(currentX, currentY)
+
+--    love.graphics.setShader(FOW_SHADER) --draw something here
+--    love.graphics.draw(SHADOW_IMAGE, -SHADOW_SIZE / 2, -SHADOW_SIZE / 2, 0, SHADOW_SIZE, SHADOW_SIZE)
+--    love.graphics.setShader()
 end
 
 function love.draw()
     cam:draw(drawCameraStuff)
 
-    DayManager:draw()
+    TimeManager:draw()
     DescriptionPanel:draw()
 
     for i = 1, #TABS do
@@ -1262,7 +1254,7 @@ function getClosest(x, y, targets, fuzziness, filter)
         local target = targets[i]
         local offsetX = 0
         local offsetY = 0
-        local isValid = true
+        local isValid = target.health > 0
 
         if fuzziness and fuzziness > 0 then
             offsetX = (math.random() - 0.5) * fuzziness
