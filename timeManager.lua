@@ -15,28 +15,30 @@ end
 local TimeManager = {
     day = 1,
     time = 10,
-    timeScale = 3,
-    isTransitioning = false,
+    timeScale = 2,
     shadowLength = 0,
+    shadowAngle = -0.7853981634,
     paused = false,
 
-    nextDay = function(self)
-        self.isTransitioning = true
-        self.looped = false
-    end,
-
     setShadowLength = function(self)
-        local x = self.time
+--        local x = self.time
+--
+--        if x <= 2 then
+--            x = 2
+--        end
+--        if x >= 22 then
+--            x = 22
+--        end
 
-        if x <= 4 then
-            x = 4
-        end
-        if x >= 20 then
-            x = 20
+--        self.shadowLength = -math.sin((x + 8) * math.pi / 20) / 3
+        self.shadowLength = 0.044 * math.abs(self.time - 12)
+        local angle = self.shadowAngle
+
+        if self.time > 12 then
+           angle = angle + toRad(180)
         end
 
-        self.shadowLength = -math.sin((x + 20) * math.pi / 16) / 3
-        DropShadowShader:send("shadowLength", self.shadowLength)
+        DropShadowShader:send("shadow", { self.shadowLength, angle })
     end,
 
     update = function(self, dt)
@@ -63,7 +65,7 @@ local TimeManager = {
         if self.paused then
             dt = 0
         else
-            dt = math.pow(2, self.timeScale - 1) * dt / 16
+            dt = math.pow(2, self.timeScale - 1) * dt / 8
         end
 
 
@@ -74,6 +76,8 @@ local TimeManager = {
             self.day = self.day + 1
         end
 
+--        self.shadowAngle = self.shadowAngle + 1 * dt
+
         self:setShadowLength()
 
         return dt
@@ -81,15 +85,15 @@ local TimeManager = {
 
     draw = function(self)
         local x = self.time
-        if self.time >= 21 or self.time <= 3 then
-            x = 21
-        end
+--        if self.time >= 21 or self.time <= 3 then
+--            x = 21
+--        end
 
-        local brightness = (1 + math.sin(math.pi * (x + 1.5) / 9)) / 3.4
---        love.graphics.setColor(0, 0, 0, brightness)
---        love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
---        love.graphics.setColor(1, 1, 1)
-        FOW_SHADER:send("ambient", brightness)
+        local brightness = (1 + math.sin(math.pi * (x + 10.5) / 15)) / 3.4
+        love.graphics.setColor(0, 0, 0, brightness)
+        love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
+        love.graphics.setColor(1, 1, 1)
+--        FOW_SHADER:send("ambient", brightness)
 
 
         love.graphics.print("Day: "..tostring(self.day), love.graphics.getWidth() - 120, love.graphics.getHeight() - 50)

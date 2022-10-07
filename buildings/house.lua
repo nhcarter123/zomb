@@ -3,31 +3,38 @@ return {
         local building = Building.create(gridX, gridY, 0, 0.5, HOUSE_2_IMAGE)
 
         building.title = "House"
-        building.description = "Houses 4 people"
+        building.description = "A simple home"
         building.shape = {
             {1},
             {1}
         }
         building.scale = 0.5
         building.progress = 0
-        building.updateRate = 1
-        building.completeAmount = 12
-        building.baseBirthChance = 0.15
-        building.foodConsumed = 4
+        building.updateRate = 3
+        building.residentCount = 0
+        building.residentCapacity = 4
+        building.completeAmount = 24
         building.happiness = 55
+        building.isHouse = true
 
         local parentInit = building.init
         building.init = function(self)
             parentInit(self)
-            MAX_POPULATION = MAX_POPULATION + 4
+            MAX_POPULATION = MAX_POPULATION + self.residentCapacity
         end
 
         building.getStats = function(self)
-            return {
-                "Birth chance: "..tostring(self.baseBirthChance * 100).."%",
-                "Happiness: "..tostring(self.happiness),
-                "Food consumed: "..tostring(self.foodConsumed).." / day"
+            local stats = {
+                "Capcity: "..tostring(self.residentCapacity),
             }
+
+            if self.initialized then
+                table.insert(stats, "Residents: "..tostring(self.residentCount))
+                table.insert(stats, "Food consumed: "..tostring(self.residentCount * self.updateRate).." / day")
+                table.insert(stats, "Happiness: "..tostring(self.happiness))
+            end
+
+            return stats
         end
 
         local parentUpdate = building.update
@@ -36,16 +43,17 @@ return {
                 return true
             end
 
-            self.progress = self.progress + self.updateRate * dt
-            self.pct = self.progress / self.completeAmount
+            if self.residentCount > 0 then
+                self.progress = self.progress + self.updateRate * dt
+                self.pct = self.progress / self.completeAmount
 
-            if self.pct >= 1 then
-                self.progress = 0
-                FOOD = FOOD - self.foodConsumed
-
-                if POPULATION < MAX_POPULATION and math.random() > self.baseBirthChance then
-                    POPULATION = POPULATION + 1
+                if self.pct >= 1 then
+                    self.progress = 0
+                    FOOD = FOOD - self.residentCount
                 end
+            else
+                self.progress = 0
+                self.pct = nil
             end
         end
 

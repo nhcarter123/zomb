@@ -53,7 +53,7 @@ return {
                 return true
             end
 
-            if self.closestTarget and not self.noWorker then
+            if self.closestTarget and not self.noWorker and not self.forbid and WOOD < MAX_WOOD then
                 if self.closestTarget.wood <= 0 then
                     self:getAOE()
                     self.progress = 0
@@ -72,6 +72,9 @@ return {
                         self.closestTarget.health = 0
                     end
                 end
+            else
+                self.progress = 0
+                self.pct = nil
             end
         end
 

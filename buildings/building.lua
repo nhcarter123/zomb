@@ -1,15 +1,22 @@
 setWorkers = function()
-    local count = POPULATION
+    local workerCount = POPULATION
+    local residentCount = POPULATION
 
     for i = 1, #buildings do
         local building = buildings[i]
-        if building.needsWorker then
-            if count > 0 then
-                count = count - 1
+        if building.needsWorker and not building.forbid then
+            if workerCount > 0 then
+                workerCount = workerCount - 1
                 building.noWorker = false
             else
                 building.noWorker = true
             end
+        end
+
+        if building.isHouse then
+            local delta = math.min(building.residentCapacity, residentCount)
+            residentCount = residentCount - delta
+            building.residentCount = delta
         end
     end
 end
@@ -60,6 +67,9 @@ return {
             shape = {{1}},
             barHeight = 8,
             xPadding = 6,
+            forbidOriginX = REMOVE_IMAGE:getWidth() / 2,
+            forbidOriginY = REMOVE_IMAGE:getHeight() / 2,
+            height = 1,
 
             title = "Wood wall",
             description = "Cheap protection that stops enemies in their tracks",
@@ -89,8 +99,12 @@ return {
             end,
 
             drawShadow = function(self)
-                DropShadowShader:send("slope", self.originY / self.originX )
-                love.graphics.draw(self.image, self.x, self.y, self.angle, self.scale * 2, self.scale * 2, self.originX, self.originY)
+                local slope = self.originY / self.originX
+                local scaleX = 1 + self.height * 150 / self.originX--self.scale * self.originX / GRID_SIZE-- + 6 / self.originX
+                local scaleY = 1 + self.height * 150 / self.originY--self.scale * self.originY / GRID_SIZE-- + 6 / self.originY
+                DropShadowShader:send("size", { scaleX, scaleY, self.height / (self.scale * self.originX / GRID_SIZE), slope } )
+--                love.graphics.draw(self.image, self.x, self.y, self.angle, self.height * slope * self.scale + 64 / self.originX, self.height * self.scale + 64 / self.originY, self.originX, self.originY)
+                love.graphics.draw(self.image, self.x, self.y, self.angle, scaleX * self.scale, scaleY * self.scale, self.originX, self.originY)
             end,
 
             draw = function(self)
@@ -126,7 +140,13 @@ return {
                     love.graphics.setColor(1, 1, 1)
                 end
 
-                if self.pct and not self.noWorker then
+                if self.forbid then
+                    love.graphics.draw(REMOVE_IMAGE, self.x, self.y, self.angle, 0.1, 0.1, self.forbidOriginX, self.forbidOriginY)
+                elseif self.noWorker then
+                    love.graphics.rectangle("fill", self.x, self.y, 10, 10)
+                end
+
+                if self.pct then
                     love.graphics.setColor(0.2, 0.2, 0.2, 1)
                     love.graphics.rectangle("fill", self.x - self.originX / 2 + self.xPadding, self.y - self.barHeight / 2 + self.originY / 2, self.originX - self.xPadding * 2, self.barHeight)
                     love.graphics.setColor(0.7, 0.7, 0.7, 1)
@@ -138,10 +158,6 @@ return {
                         self.barHeight - 4
                     )
                     love.graphics.setColor(1, 1, 1)
-                end
-
-                if self.noWorker then
-                    love.graphics.rectangle("fill", self.x, self.y, 10, 10)
                 end
             end,
 
@@ -224,6 +240,7 @@ return {
 
             init = function(self)
                 self:setGrid()
+                self.initialized = true
             end
         }
     end

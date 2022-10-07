@@ -23,6 +23,7 @@ function createZombie(x, y)
 
 
     unit.update = function(self, dt, index)
+        dt = dt * 12
         if self.health <= 0 then
             return true -- flag for deletion
         end

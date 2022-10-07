@@ -11,7 +11,7 @@ require("explosion")
 
 require("buttons/button")
 require("buttons/tab")
-require("buttons/buttons")
+Buttons = require("buttons/buttons")
 
 require("guns/gun")
 require("guns/bow")
@@ -43,6 +43,7 @@ Selected = require("selected")
 DescriptionPanel = require("descriptionPanel")
 TimeManager = require("TimeManager")
 CloudManager = require("cloudManager")
+PopulationManager = require("populationManager")
 
 gamera = require("gamera")
 
@@ -152,7 +153,7 @@ function love.load()
     WALL_PIECE_3_IMAGE = love.graphics.newImage("images/wallPiece3.png")
 
     EXPLOSION_IMAGE = love.graphics.newImage("explosion6.png")
-    ZOMBIE_IMAGE = love.graphics.newImage("zombie.png")
+    ZOMBIE_IMAGE = love.graphics.newImage("images/zombie.png")
     ZOMBIE_SHEET = love.graphics.newImage("zombieSheet.png")
     ARCHER_IMAGE = love.graphics.newImage("images/archer.png")
     SOLDIER_IMAGE = love.graphics.newImage("images/worker.png")
@@ -186,6 +187,8 @@ function love.load()
     TOWER_IMAGE = love.graphics.newImage("images/tower.png")
     FARM_IMAGE = love.graphics.newImage("images/farm.png")
     GRASS_IMAGE = love.graphics.newImage("images/grass.png")
+
+    REMOVE_IMAGE = love.graphics.newImage("images/remove.png")
 --    TILE_IMAGE = love.graphics.newImage("images/grass1.png")
 --    WINTER_IMAGE = love.graphics.newImage("winter.jpg")
 
@@ -194,18 +197,21 @@ function love.load()
     ZOMBIE_QUAD = love.graphics.newQuad(0,  0,  64, 64, ZOMBIE_IMAGE:getDimensions())
 --    table.insert(DRAW_ENTITIES, protagonist)
 
+    ---- Init buttons
+    FORBID_BUTTON = Buttons.createForbidButton()
+    ---- Init tabs
     TABS = {
         createTab("Residential", {
-            createHouseButton(),
+            Buttons.createHouseButton(),
         }),
         createTab("Production", {
-            createFarmButton(),
-            createWoodCutterHutButton(),
-            createStorageButton(),
+            Buttons.createFarmButton(),
+            Buttons.createWoodCutterHutButton(),
+            Buttons.createStorageButton(),
         }),
         createTab("Defense", {
-            createWallButton(),
-            createOutpostButton(),
+            Buttons.createWallButton(),
+            Buttons.createOutpostButton(),
 --            createStorageButton(),
         }),
     }
@@ -680,13 +686,11 @@ function love.keypressed(key, scancode, isrepeat)
     end
 
     if key == "right" then
-        TimeManager.shadowLength = TimeManager.shadowLength - 0.01
-        DropShadowShader:send("shadowLength", TimeManager.shadowLength)
+        TimeManager.timeScale = TimeManager.timeScale + 1
     end
 
     if key == "left" then
-        TimeManager.shadowLength = TimeManager.shadowLength + 0.01
-        DropShadowShader:send("shadowLength", TimeManager.shadowLength)
+        TimeManager.timeScale = TimeManager.timeScale - 1
     end
 
     if key == "lshift" then
@@ -795,6 +799,7 @@ function love.update(dt)
     end
 
     CloudManager:update(gameDt)
+    PopulationManager:update(gameDt)
 
     -- Border Pan
 --    local xDiff = (love.graphics.getWidth() / 2 - mx) / love.graphics.getWidth()
@@ -854,6 +859,51 @@ function love.update(dt)
         end
     end
 
+    local windowBottom = love.graphics:getHeight()
+
+    for i = #TABS, 1, -1 do
+        TABS[i]:update(i * 150 - 130, windowBottom - 50)
+    end
+
+    CURRENT_BUTTONS = {}
+    if SELECTED_TAB then
+        CURRENT_BUTTONS = SELECTED_TAB.buttons
+    end
+
+    if #SELECTED_TILES > 0 then
+        table.insert(CURRENT_BUTTONS, FORBID_BUTTON)
+    end
+
+    for i = #CURRENT_BUTTONS, 1, -1 do
+        local button = CURRENT_BUTTONS[i]
+        local x = (i - 1) * 100 + 60
+        local y = windowBottom - 120
+        local leftBound = x - button.width / 2
+        local rightBound = x + button.width / 2
+        local topBound = y - button.height / 2
+        local bottomBound = y + button.height / 2
+
+        local thisButtonHovered = button == HOVERED_BUTTON
+
+        if
+            mx < rightBound and mx > leftBound and
+            my > topBound and my < bottomBound
+        then
+            if not thisButtonHovered then
+                HOVERED_BUTTON = button
+                if #button.cost > 0 then
+                    DescriptionPanel:setInfo(button.obj, button.cost)
+                    DescriptionPanel:setVisible(true)
+                end
+            end
+        elseif thisButtonHovered then
+            HOVERED_BUTTON = nil
+            DescriptionPanel:setVisible(false)
+        end
+
+        button:update(x, y, thisButtonHovered)
+    end
+
     local mouseMovedTiles = false
     if gridX ~= HOVERED_GRID_X or gridY ~= HOVERED_GRID_Y then
         mouseMovedTiles = true
@@ -865,15 +915,13 @@ function love.update(dt)
     if mouseDown then
         local mouseOverUi = false
 
-        if SELECTED_TAB then
-            for i = 1, #SELECTED_TAB.buttons do
-                local button = SELECTED_TAB.buttons [i]
-                if button == HOVERED_BUTTON then
-                    if MB1_CLICKED then
-                        button:click()
-                    end
-                    mouseOverUi = true
+        for i = 1, #CURRENT_BUTTONS do
+            local button = CURRENT_BUTTONS[i]
+            if button == HOVERED_BUTTON then
+                if MB1_CLICKED then
+                    button:click(SELECTED_TILES)
                 end
+                mouseOverUi = true
             end
         end
 
@@ -1065,43 +1113,6 @@ function love.update(dt)
         end
     end
 
-    local windowBottom = love.graphics:getHeight()
-
-
-    for i = #TABS, 1, -1 do
-        TABS[i]:update(i * 150 - 130, windowBottom - 50)
-    end
-
-    if SELECTED_TAB then
-        for i = #SELECTED_TAB.buttons, 1, -1 do
-            local button = SELECTED_TAB.buttons[i]
-            local x = (i - 1) * 100 + 60
-            local y = windowBottom - 120
-            local leftBound = x - button.width / 2
-            local rightBound = x + button.width / 2
-            local topBound = y - button.height / 2
-            local bottomBound = y + button.height / 2
-
-            local thisButtonHovered = button == HOVERED_BUTTON
-
-            if
-                mx < rightBound and mx > leftBound and
-                my > topBound and my < bottomBound
-            then
-                if not thisButtonHovered then
-                    HOVERED_BUTTON = button
-                    DescriptionPanel:setInfo(button.obj, button.cost)
-                    DescriptionPanel:setVisible(true)
-                end
-            elseif thisButtonHovered then
-                HOVERED_BUTTON = nil
-                DescriptionPanel:setVisible(false)
-            end
-
-            button:update(x, y, thisButtonHovered)
-        end
-    end
-
     local scale = lerp(cam:getScale(), targetScale, 0.05)
     cam:setScale(scale)
 
@@ -1127,7 +1138,6 @@ function love.update(dt)
 end
 
 local function drawCameraStuff(l,t,w,h)
-
     love.graphics.draw(GRASS_CANVAS,
         -GRID_SIZE * (GRID_TILES + 0.5) - GRASS_PADDING_TILES * GRASS_TILE_SIZE * GRASS_SCALE,
         -GRID_SIZE * (GRID_TILES + 0.5) - GRASS_PADDING_TILES * GRASS_TILE_SIZE * GRASS_SCALE,
@@ -1225,16 +1235,15 @@ function love.draw()
     cam:draw(drawCameraStuff)
 
     TimeManager:draw()
+    PopulationManager:draw()
     DescriptionPanel:draw()
 
     for i = 1, #TABS do
         TABS[i]:draw()
     end
 
-    if SELECTED_TAB then
-        for i = 1, #SELECTED_TAB.buttons do
-            SELECTED_TAB.buttons[i]:draw()
-        end
+    for i = 1, #CURRENT_BUTTONS do
+        CURRENT_BUTTONS[i]:draw()
     end
 
     for i = 1, #hud, 1 do

@@ -27,9 +27,8 @@ return {
         end
 
         building.draw = function(self)
-            love.graphics.draw(STORAGE_FLOOR_IMAGE, self.x, self.y, self.angle, self.scale, self.scale, self.originX, self.originY)
-
             if self.alpha < 1 then
+                love.graphics.draw(STORAGE_FLOOR_IMAGE, self.x, self.y, self.angle, self.scale, self.scale, self.originX, self.originY)
                 love.graphics.setColor(1, 1, 1, self.alpha)
                 love.graphics.draw(STORAGE_ROOF_IMAGE, self.x, self.y, self.angle, self.scale, self.scale, self.originX, self.originY)
                 love.graphics.setColor(1, 1, 1)

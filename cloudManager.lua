@@ -48,7 +48,7 @@ local CloudManager = {
     end,
 
     update = function(self, dt)
-        local cloudSpeed = dt * 10
+        local cloudSpeed = dt * 90
 
         if TimeManager.isTransitioning then
             cloudSpeed = cloudSpeed * 120
@@ -75,6 +75,10 @@ local CloudManager = {
     end,
 
     draw = function(self, camX, camY)
+        local shadowValue = math.abs(TimeManager.shadowLength)
+        local shadowAlpha = 0.3 + 3 * shadowValue - 12 * math.pow(shadowValue + 0.23, 4);
+
+
         for i = 1, #self.clouds do
             local cloud = self.clouds[i]
             local camFactor = 100 / cloud.height
@@ -83,8 +87,8 @@ local CloudManager = {
             local distToCam = dist(camX, camY, visibleX, visibleY)
             local camAlpha = math.pow(distToCam + 1100, 2) / 2000000
 
-            love.graphics.setColor(0, 0, 0, 0.06 * camAlpha)
-            love.graphics.draw(cloud.image, cloud.x - TimeManager.shadowLength * 1500, cloud.y + TimeManager.shadowLength * 1500, cloud.angle, 14 / camFactor, 14 / camFactor, cloud.originX, cloud.originY)
+            love.graphics.setColor(0, 0, 0, 0.2 * camAlpha * shadowAlpha)
+            love.graphics.draw(cloud.image, cloud.x - TimeManager.shadowLength * 1000, cloud.y + TimeManager.shadowLength * 1000, cloud.angle, 14 / camFactor, 14 / camFactor, cloud.originX, cloud.originY)
             love.graphics.setColor(1, 1, 1, cloud.alpha * camAlpha)
             love.graphics.draw(cloud.image, visibleX, visibleY, cloud.angle,
                 cloud.scale * 10 / camFactor,

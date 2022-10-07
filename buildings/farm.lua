@@ -33,7 +33,7 @@ return {
                 return true
             end
 
-            if not self.noWorker then
+            if not self.noWorker and not self.forbid and FOOD < MAX_FOOD then
                 self.progress = self.progress + self.updateRate * dt
                 self.pct = self.progress / self.completeAmount
 
@@ -41,6 +41,9 @@ return {
                     self.progress = 0
                     FOOD = FOOD + self.harvestYield
                 end
+            else
+                self.progress = 0
+                self.pct = nil
             end
         end
 

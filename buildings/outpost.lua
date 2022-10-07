@@ -11,6 +11,7 @@ return {
         building.searchCount = math.random() * searchDuration
         building.gun = createBow()
         building.scale = 0.5
+        building.height = 3
         building.shape = {
             {1},
         }
