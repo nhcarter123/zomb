@@ -15,10 +15,12 @@ end
 local TimeManager = {
     day = 1,
     time = 10,
-    timeScale = 2,
+    timeScale = 1,
     shadowLength = 0,
-    shadowAngle = -0.7853981634,
+    maxTimeScale = 6,
+    shadowAngle = toRad(-45),
     paused = false,
+    enemySpawnTimer = 24,
 
     setShadowLength = function(self)
 --        local x = self.time
@@ -65,9 +67,8 @@ local TimeManager = {
         if self.paused then
             dt = 0
         else
-            dt = math.pow(2, self.timeScale - 1) * dt / 8
+            dt = math.pow(2, self.timeScale - 1) * dt / 16
         end
-
 
         self.time = self.time + dt
 
@@ -76,9 +77,11 @@ local TimeManager = {
             self.day = self.day + 1
         end
 
---        self.shadowAngle = self.shadowAngle + 1 * dt
-
         self:setShadowLength()
+
+        if self.maxTimeScale < 6 and #enemyUnits == 0 then
+            self.maxTimeScale = 6
+        end
 
         return dt
     end,
@@ -96,8 +99,16 @@ local TimeManager = {
 --        FOW_SHADER:send("ambient", brightness)
 
 
-        love.graphics.print("Day: "..tostring(self.day), love.graphics.getWidth() - 120, love.graphics.getHeight() - 50)
-        love.graphics.print("Time: "..formatTime(self.time), love.graphics.getWidth() - 120, love.graphics.getHeight() - 35)
+        love.graphics.print("Day: "..tostring(self.day), love.graphics.getWidth() - 120, love.graphics.getHeight() - 80)
+        love.graphics.print("Time: "..formatTime(self.time), love.graphics.getWidth() - 120, love.graphics.getHeight() - 65)
+
+        if self.paused then
+            love.graphics.draw(PAUSE_IMAGE, love.graphics.getWidth() - 110, love.graphics.getHeight() - 35, 0, 0.15, 0.15, ICON_ORIGIN_X, ICON_ORIGIN_Y)
+        else
+            for i = 1, self.timeScale do
+                love.graphics.draw(PLAY_IMAGE, love.graphics.getWidth() - 110 + (i - 1) * 12, love.graphics.getHeight() - 35, 0, 0.15, 0.15, ICON_ORIGIN_X, ICON_ORIGIN_Y)
+            end
+        end
     end
 }
 

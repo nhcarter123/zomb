@@ -14,7 +14,8 @@ return {
         building.title = "Tree"
         building.description = "A large oak tree"
         building.isTree = true
-        building.wood = 100
+        building.wood = 400
+        building.height = 2
 --        building.angle = toRad(math.random() * 360)
         --    building.scale = 1
         --    building.scale = 0.16 + math.random() * 0.02

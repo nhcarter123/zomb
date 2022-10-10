@@ -1,3 +1,124 @@
+updateStorage = function()
+    local anySpaceAvailable = false
+    local wood = WOOD
+    local woodSpaceAvailable = false
+    local food = FOOD
+    local foodSpaceAvailable = false
+    local stone = STONE
+    local stoneSpaceAvailable = false
+
+    for i = 1, #buildings do
+        local building = buildings[i]
+
+        if building.storageCapactiy then
+            for j = 1, building.storageCapactiy do
+                local storage = building.storage[j]
+                local type
+                local savedAmount = 0
+                local storageSet = false
+                if storage then
+                    type = storage.type
+                    savedAmount = storage.amount
+                end
+
+                if building.storesWood and (not type or type == "Wood") then
+                    wood = wood - savedAmount
+                    local delta = math.min(wood, WOOD_MAX_STACK_SIZE)
+
+                    if delta > 0 then
+                        local image = LUMBER_IMAGE_1
+
+                        if wood > WOOD_MAX_STACK_SIZE * 0.25 then
+                            image = LUMBER_IMAGE_2
+                        end
+
+                        if wood > WOOD_MAX_STACK_SIZE * 0.75 then
+                            image = LUMBER_IMAGE_3
+                        end
+
+                        wood = wood - delta
+
+                        storage = {
+                            image = image,
+                            amount = delta,
+                            type = "Wood"
+                        }
+                        storageSet = true
+                    else
+                        woodSpaceAvailable = true
+                    end
+                end
+
+                if building.storesFood and (not type or type == "Food") and not storageSet then
+                    food = food - savedAmount
+                    local delta = math.min(food, FOOD_MAX_STACK_SIZE)
+
+                    if delta > 0 then
+                        local image = BREAD_IMAGE_1
+
+                        if food > FOOD_MAX_STACK_SIZE * 0.25 then
+                            image = BREAD_IMAGE_2
+                        end
+
+                        if food > FOOD_MAX_STACK_SIZE * 0.75 then
+                            image = BREAD_IMAGE_3
+                        end
+
+                        food = food - delta
+
+                        storage = {
+                            image = image,
+                            amount = delta,
+                            type = "Food"
+                        }
+                        storageSet = true
+                    else
+                        foodSpaceAvailable = true
+                    end
+                end
+
+                if building.storesStone and (not type or type == "Stone") and not storageSet then
+                    stone = stone - savedAmount
+                    local delta = math.min(stone, STONE_MAX_STACK_SIZE)
+
+                    if delta > 0 then
+                        local image = STONE_IMAGE_1
+
+                        if stone > STONE_MAX_STACK_SIZE * 0.25 then
+                            image = STONE_IMAGE_2
+                        end
+
+                        if stone > STONE_MAX_STACK_SIZE * 0.75 then
+                            image = STONE_IMAGE_3
+                        end
+
+                        stone = stone - delta
+
+                        storage = {
+                            image = image,
+                            amount = delta,
+                            type = "Stone",
+                        }
+                        storageSet = true
+                    else
+                        stoneSpaceAvailable = true
+                    end
+                end
+
+                if not storage then
+                    anySpaceAvailable = true
+                else
+                    building.storage[j] = storage
+                end
+            end
+        end
+    end
+
+    WOOD_SPACE_AVAILABLE = anySpaceAvailable or woodSpaceAvailable
+    FOOD_SPACE_AVAILABLE = anySpaceAvailable or foodSpaceAvailable
+    STONE_SPACE_AVAILABLE = anySpaceAvailable or stoneSpaceAvailable
+end
+
 setWorkers = function()
     local workerCount = POPULATION
     local residentCount = POPULATION
@@ -67,8 +188,6 @@ return {
             shape = {{1}},
             barHeight = 8,
             xPadding = 6,
-            forbidOriginX = REMOVE_IMAGE:getWidth() / 2,
-            forbidOriginY = REMOVE_IMAGE:getHeight() / 2,
             height = 1,
 
             title = "Wood wall",
@@ -99,12 +218,13 @@ return {
             end,
 
             drawShadow = function(self)
-                local slope = self.originY / self.originX
-                local scaleX = 1 + self.height * 150 / self.originX--self.scale * self.originX / GRID_SIZE-- + 6 / self.originX
-                local scaleY = 1 + self.height * 150 / self.originY--self.scale * self.originY / GRID_SIZE-- + 6 / self.originY
-                DropShadowShader:send("size", { scaleX, scaleY, self.height / (self.scale * self.originX / GRID_SIZE), slope } )
---                love.graphics.draw(self.image, self.x, self.y, self.angle, self.height * slope * self.scale + 64 / self.originX, self.height * self.scale + 64 / self.originY, self.originX, self.originY)
-                love.graphics.draw(self.image, self.x, self.y, self.angle, scaleX * self.scale, scaleY * self.scale, self.originX, self.originY)
+                if self.height > 0 then
+                    local slope = self.originY / self.originX
+                    local scaleX = 1 + self.height * 150 / self.originX--self.scale * self.originX / GRID_SIZE-- + 6 / self.originX
+                    local scaleY = 1 + self.height * 150 / self.originY--self.scale * self.originY / GRID_SIZE-- + 6 / self.originY
+                    DropShadowShader:send("size", { scaleX, scaleY, self.height / (self.scale * self.originX / GRID_SIZE), slope } )
+                    love.graphics.draw(self.image, self.x, self.y, self.angle, scaleX * self.scale, scaleY * self.scale, self.originX, self.originY)
+                end
             end,
 
             draw = function(self)
@@ -141,9 +261,9 @@ return {
                 end
 
                 if self.forbid then
-                    love.graphics.draw(REMOVE_IMAGE, self.x, self.y, self.angle, 0.1, 0.1, self.forbidOriginX, self.forbidOriginY)
+                    love.graphics.draw(REMOVE_IMAGE, self.x, self.y, self.angle, 0.25, 0.25, ICON_ORIGIN_X, ICON_ORIGIN_Y)
                 elseif self.noWorker then
-                    love.graphics.rectangle("fill", self.x, self.y, 10, 10)
+                    love.graphics.draw(WARNING_IMAGE, self.x, self.y, self.angle, 0.25, 0.25, ICON_ORIGIN_X, ICON_ORIGIN_Y)
                 end
 
                 if self.pct then

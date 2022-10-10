@@ -8,6 +8,7 @@ return {
         building.scale = 0.54
         building.health = 150
         building.maxHealth = 150
+        building.cost = {{ "Wood", 1 }}
 
         building.setImage = function(self)
             local canvas = love.graphics.newCanvas(256)

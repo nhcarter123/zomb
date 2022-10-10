@@ -13,9 +13,10 @@ return {
 
         local building = Building.create(gridX, gridY, 0, 0, image)
 
-        building.title = "Rock"
+        building.title = "Stone boulder"
         building.description = "A giant boulder"
-        building.isRock = true
+        building.isStone = true
+        building.stone = 200
 --        building.angle = toRad(math.random() * 360)
         --    building.scale = 1
         --    building.scale = 0.16 + math.random() * 0.02

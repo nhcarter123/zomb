@@ -11,9 +11,8 @@ local descriptionPanel = {
         self.visible = visible
     end,
 
-    setInfo = function(self, obj, cost)
+    setInfo = function(self, obj)
         self.obj = obj
-        self.cost = cost
     end,
 
     draw = function(self)
@@ -31,7 +30,7 @@ local descriptionPanel = {
 
             writeHeight = writeHeight + 30
 
-            if self.cost then
+            if self.obj.cost then
                 love.graphics.setColor(0.2, 0.2, 0.2)
                 love.graphics.line(self.x + self.linePadding, self.y + writeHeight, self.x + self.width - self.linePadding, self.y + writeHeight)
                 love.graphics.setColor(1, 1, 1)
@@ -40,8 +39,8 @@ local descriptionPanel = {
                 love.graphics.print("Cost: ", self.x + self.padding, self.y + writeHeight)
 
                 writeHeight = writeHeight + 20
-                for i = 1, #self.cost do
-                    love.graphics.print(tostring(self.cost[i][2]).." "..self.cost[i][1], self.x + self.padding, self.y + writeHeight)
+                for i = 1, #self.obj.cost do
+                    love.graphics.print(tostring(self.obj.cost[i][2]).." "..self.obj.cost[i][1], self.x + self.padding, self.y + writeHeight)
                     writeHeight = writeHeight + 20
                 end
             end

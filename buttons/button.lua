@@ -1,4 +1,4 @@
-function createButton(obj, cost)
+function createButton(obj)
     local button = {
         scale = 1,
         baseScale = 1,
@@ -7,7 +7,6 @@ function createButton(obj, cost)
         halfWidth = obj.image:getWidth() / 2,
         halfHeight = obj.image:getHeight() / 2,
         obj = obj,
-        cost = cost,
 
         update = function(self, x, y, isHovered)
             self.x = x

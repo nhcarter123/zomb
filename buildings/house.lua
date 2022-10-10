@@ -4,10 +4,6 @@ return {
 
         building.title = "House"
         building.description = "A simple home"
-        building.shape = {
-            {1},
-            {1}
-        }
         building.scale = 0.5
         building.progress = 0
         building.updateRate = 3
@@ -16,6 +12,11 @@ return {
         building.completeAmount = 24
         building.happiness = 55
         building.isHouse = true
+        building.cost = {{ "Wood", 5 }}
+        building.shape = {
+            {1},
+            {1}
+        }
 
         local parentInit = building.init
         building.init = function(self)

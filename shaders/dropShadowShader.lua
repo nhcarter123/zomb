@@ -7,7 +7,7 @@ return love.graphics.newShader[[
         float alpha = 0;
         float length = shadow.x;
         // float baseAlpha = 0.9 - shadow.x * 3;
-        float baseAlpha = 0.3 + 3 * shadow.x - 12 * pow(shadow.x + 0.24, 4);
+        float baseAlpha = 0.78 - shadow.x - 2 * pow(shadow.x, 2);
         //float slope = size.y / size.x;
 
         //vec2 scaledPos = (texturePos * 2 - 0.5);
@@ -28,30 +28,27 @@ return love.graphics.newShader[[
         float xdiff = cos(angle);
         float ydiff = sin(angle);
         //float factor = length * dist / 1.7 + length;
-        float factor = length * dist / 0.9 + length * size.z;
+        float factor = length * dist + length * size.z * 0.7;
+        //float factor = 2 * length * size.x;
 
         float diff = mod((t - dir) + 3.14159265, 6.28318531) - 3.14159265;
+        float mag = max(size.x, size.y);
 
-        //if (diff < sign(length) * factor * 2) {
-        //    scaledPos = scaledPos - sign(length) * vec2(-diff, diff) / vec2(size.x, size.y) / 2;
-        //} else {
-        //    scaledPos = scaledPos - vec2(-factor, factor) / vec2(size.x, size.y);
-        //}
-
-        //scaledPos = scaledPos / (1 + dist / 4);
-
-        float mag = distance(vec2(0), vec2(size.x, size.y));
-
+        float edgeAlpha = 1;
+        float imageAlpha = 1;
         if (abs(diff) > 1.5708) {
+            vec2 shadowPos = scaledPos + vec2(xdiff, ydiff) * dist;
+            edgeAlpha = Texel(texture, shadowPos).a;
+
             if (dist > factor) {
-                scaledPos = scaledPos + vec2(xdiff, ydiff) * factor;
-            } else {
-                scaledPos = scaledPos + vec2(xdiff, ydiff) * dist;
+                shadowPos = scaledPos + vec2(xdiff, ydiff) * factor;
+                imageAlpha = Texel(texture, shadowPos).a;
             }
 
             float slopeFactor = 1 + (size.w - 1) / 5;
-            float fade = max(1 - 0.3 * (dist * mag * slopeFactor) / size.z, 0);
-            alpha = baseAlpha * Texel(texture, scaledPos).a * fade;
+            float fade = max(1 - 0.4 * (dist * mag * slopeFactor) / size.z, 0);
+
+            alpha = baseAlpha * min(edgeAlpha, imageAlpha) * fade;
         }
 
         return vec4(0, 0, 0, alpha);

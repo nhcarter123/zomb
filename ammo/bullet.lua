@@ -17,6 +17,7 @@ function createBullet(x, y, z, xVel, yVel, zVel, duration, angle, target, isHit,
         ammo = ammo,
 
         update = function(self, dt)
+            dt = dt * 12
             self.x = self.x + self.xVel * dt
             self.y = self.y + self.yVel * dt
             self.z = self.z + self.zVel * dt

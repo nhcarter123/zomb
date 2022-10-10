@@ -1,8 +1,8 @@
 function createBow()
     local gun = createGun(
-        10, -- magazine size
-        0.5, -- shot delay
-        3, -- reload time
+        6, -- magazine size
+        0.1, -- shot delay
+        4, -- reload time
         0.25, -- acuracy mod,
         0.7, -- velocity mod,
         0, -- min range

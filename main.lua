@@ -28,6 +28,7 @@ Wall = require("buildings/wall")
 Tower = require("buildings/outpost")
 House = require("buildings/house")
 WoodCutterHut = require("buildings/woodCutterHut")
+MiningCamp = require("buildings/miningCamp")
 Tree = require("buildings/tree")
 Rock = require("buildings/rock")
 Storage = require("buildings/storage")
@@ -41,7 +42,8 @@ LineShader = require("shaders/lineShader")
 Selected = require("selected")
 
 DescriptionPanel = require("descriptionPanel")
-TimeManager = require("TimeManager")
+TimeManager = require("timeManager")
+EnemyManager = require("enemyManager")
 CloudManager = require("cloudManager")
 PopulationManager = require("populationManager")
 
@@ -96,14 +98,22 @@ MAX_SEARCHES = 2000
 
 MAX_POPULATION = 0
 MAX_WOOD = 0
-MAX_FOOD = 0
 MAX_HAPPINESS = 100
 
 POPULATION = 4
-WOOD = 30
-FOOD = 20
 HAPPINESS = 50
 
+---- Resources
+WOOD = 60
+FOOD = 20
+STONE = 0
+WOOD_VALUE = 1
+FOOD_VALUE = 1
+STONE_VALUE = 2
+
+FOOD_MAX_STACK_SIZE = 50
+WOOD_MAX_STACK_SIZE = 50
+STONE_MAX_STACK_SIZE = 50
 
 SELECTED = nil
 SELECTED_TAB = nil
@@ -115,6 +125,9 @@ HOVERED_GRID_Y = 0
 SELECTED_TILES = {}
 SAVED_SELECTED_TILES = {}
 
+SAVED_SELECTED_TILES = {}
+ICON_ORIGIN_X = 64
+ICON_ORIGIN_Y = 64
 --     love.window.showMessageBox("test", tostring(M1_ABRAMS_BODY_IMAGE))
 
 function love.load()
@@ -169,6 +182,7 @@ function love.load()
     HOUSE_IMAGE = love.graphics.newImage("images/house.png")
     HOUSE_2_IMAGE = love.graphics.newImage("images/house2.png")
     WOOD_CUTTER_HUT_IMAGE = love.graphics.newImage("images/woodCutterHut.png")
+    MINING_CAMP_IMAGE = love.graphics.newImage("images/miningTent.png")
 
     STORAGE_FLOOR_IMAGE = love.graphics.newImage("images/storageFloor.png")
     STORAGE_ROOF_IMAGE = love.graphics.newImage("images/storageRoof.png")
@@ -188,7 +202,27 @@ function love.load()
     FARM_IMAGE = love.graphics.newImage("images/farm.png")
     GRASS_IMAGE = love.graphics.newImage("images/grass.png")
 
+    ---- Icons
     REMOVE_IMAGE = love.graphics.newImage("images/remove.png")
+    WARNING_IMAGE = love.graphics.newImage("images/warning.png")
+    PAUSE_IMAGE = love.graphics.newImage("images/pause.png")
+    PLAY_IMAGE = love.graphics.newImage("images/play.png")
+
+    ---- Resource Stacks
+    ---- Wood
+    LUMBER_IMAGE_1 = love.graphics.newImage("images/lumber1.png")
+    LUMBER_IMAGE_2 = love.graphics.newImage("images/lumber2.png")
+    LUMBER_IMAGE_3 = love.graphics.newImage("images/lumber3.png")
+    ---- Bread
+    BREAD_IMAGE_1 = love.graphics.newImage("images/bread1.png")
+    BREAD_IMAGE_2 = love.graphics.newImage("images/bread2.png")
+    BREAD_IMAGE_3 = love.graphics.newImage("images/bread3.png")
+    ---- Stone
+    STONE_IMAGE_1 = love.graphics.newImage("images/stone1.png")
+    STONE_IMAGE_2 = love.graphics.newImage("images/stone2.png")
+    STONE_IMAGE_3 = love.graphics.newImage("images/stone3.png")
+
+
 --    TILE_IMAGE = love.graphics.newImage("images/grass1.png")
 --    WINTER_IMAGE = love.graphics.newImage("winter.jpg")
 
@@ -207,6 +241,7 @@ function love.load()
         createTab("Production", {
             Buttons.createFarmButton(),
             Buttons.createWoodCutterHutButton(),
+            Buttons.createMiningCampButton(),
             Buttons.createStorageButton(),
         }),
         createTab("Defense", {
@@ -253,6 +288,14 @@ function love.load()
             local rockNoise = noise6 * startingFactor
             local treeNoise = math.sqrt(math.sqrt(math.sqrt(noise1 * noise2 * noise12 * (1 - rockNoise)))) * startingFactor
 
+            if
+                i == -GRID_TILES or i == GRID_TILES or
+                j == -GRID_TILES or j == GRID_TILES
+            then
+                rockNoise = 0
+                treeNoise = 0
+            end
+
             grid[i][j] = {
                 building = nil,
                 units = 0,
@@ -266,13 +309,13 @@ function love.load()
 
             love.graphics.rectangle("line", (i + GRID_TILES) * tileSize, (j + GRID_TILES) * tileSize, tileSize, tileSize)
 
-            if treeNoise > 0.8 then
+            if treeNoise > 0.82 then
                 local building = Tree.create(i, j)
                 table.insert(buildings, building)
                 building:init()
             end
 
-            if rockNoise > 0.93 then
+            if rockNoise > 0.95 then
                 local building = Rock.create(i, j)
                 table.insert(buildings, building)
                 building:init()
@@ -294,11 +337,12 @@ function love.load()
 
 
     local house = House.create(-2, 0)
-    house:init()
     table.insert(buildings,house )
+    house:init()
+
     local storage = Storage.create(3, 0)
-    storage:init()
     table.insert(buildings, storage)
+    storage:init()
 
     cam:setScale(targetScale)
 
@@ -320,7 +364,7 @@ function calculateGrid()
     local lights = {}
     for i = #buildings, 1, -1 do
         local building = buildings[i]
-        if not building.isWall and not building.isTree and not building.isRock then
+        if not building.isWall and not building.isTree and not building.isStone then
             table.insert(lights, {building.x / SHADOW_SIZE + 0.5, building.y / SHADOW_SIZE + 0.5})
         end
     end
@@ -563,7 +607,7 @@ function calculateIntegrationField()
 
     for i = 1, #buildings do
         local building = buildings[i]
-        if not building.isWall and not building.isTree and not building.isRock then
+        if not building.isWall and not building.isTree and not building.isStone then
             for j = 0, #building.shape - 1 do
                 local row = building.shape[j + 1]
                 for i = 0, #row - 1 do
@@ -676,30 +720,47 @@ function love.keypressed(key, scancode, isrepeat)
         love.event.quit()
     end
 
-    if key == "return" then
-        DEBUG_MODE = not DEBUG_MODE
-    end
-
     if key == "space" then
 --        TimeManager:nextDay()
         TimeManager.paused = not TimeManager.paused
     end
 
     if key == "right" then
+        TimeManager.paused = false
         TimeManager.timeScale = TimeManager.timeScale + 1
+        if TimeManager.timeScale > TimeManager.maxTimeScale then
+            TimeManager.timeScale = TimeManager.maxTimeScale
+        end
     end
 
     if key == "left" then
         TimeManager.timeScale = TimeManager.timeScale - 1
+        if TimeManager.timeScale < 1 then
+            TimeManager.timeScale = 0
+            TimeManager.paused = true
+        end
     end
 
     if key == "lshift" then
         SHIFT_IS_DOWN = true
     end
 
-    if key == "tab" then
+    ---- Debug
+    if key == "f1" then
         GRID_DEBUG = not GRID_DEBUG
     end
+
+    if key == "f2" then
+        STONE = 3000
+        WOOD = 3000
+        FOOD = 3000
+        updateStorage()
+    end
+
+    if key == "f3" then
+        DEBUG_MODE = not DEBUG_MODE
+    end
+
 end
 
 function love.keyreleased(key, scancode, isrepeat)
@@ -798,6 +859,7 @@ function love.update(dt)
         SELECTED:update()
     end
 
+    EnemyManager:update(gameDt)
     CloudManager:update(gameDt)
     PopulationManager:update(gameDt)
 
@@ -891,8 +953,8 @@ function love.update(dt)
         then
             if not thisButtonHovered then
                 HOVERED_BUTTON = button
-                if #button.cost > 0 then
-                    DescriptionPanel:setInfo(button.obj, button.cost)
+                if button.obj.cost and #button.obj.cost > 0 then
+                    DescriptionPanel:setInfo(button.obj)
                     DescriptionPanel:setVisible(true)
                 end
             end
@@ -1124,8 +1186,8 @@ function love.update(dt)
 
     hud[1] = "Population: "..tostring(POPULATION).."/"..tostring(MAX_POPULATION)
     hud[2] = "Happiness: "..tostring(HAPPINESS).."/"..tostring(MAX_HAPPINESS)
-    hud[3] = "Wood: "..tostring(WOOD).."/"..tostring(MAX_WOOD)
-    hud[4] = "Food: "..tostring(FOOD).."/"..tostring(MAX_FOOD)
+    hud[3] = "Wood: "..tostring(WOOD)
+    hud[4] = "Food: "..tostring(FOOD)
 
     debug[1] = "Current FPS: "..tostring(love.timer.getFPS())
     debug[2] = "enemies: "..tostring(#enemyUnits)

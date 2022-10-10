@@ -12,7 +12,8 @@ return {
         building.needsWorker = true
 
         building.scale = 0.5
-        building.drawShadow = function() end
+        building.height = 0
+        building.cost = {{ "Wood", 5 }}
         building.shape = {
             {1, 1},
             {1, 1},
@@ -33,7 +34,7 @@ return {
                 return true
             end
 
-            if not self.noWorker and not self.forbid and FOOD < MAX_FOOD then
+            if not self.noWorker and not self.forbid and FOOD_SPACE_AVAILABLE then
                 self.progress = self.progress + self.updateRate * dt
                 self.pct = self.progress / self.completeAmount
 

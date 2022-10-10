@@ -11,7 +11,8 @@ return {
         building.searchCount = math.random() * searchDuration
         building.gun = createBow()
         building.scale = 0.5
-        building.height = 3
+        building.height = 2
+        building.cost = {{ "Wood", 6 }}
         building.shape = {
             {1},
         }
@@ -24,6 +25,8 @@ return {
         local parentUpdate = building.update
 
         building.update = function(self, dt)
+            dt = dt * 12
+
             if parentUpdate(self) then
                 return true
             end

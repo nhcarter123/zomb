@@ -64,6 +64,7 @@ return {
                         end
                     end
 
+                    updateStorage()
                     table.insert(buildings, self.obj)
                     self.visible = false
                     self.obj:init()
