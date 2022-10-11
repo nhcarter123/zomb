@@ -1,10 +1,21 @@
 return {
-    createWallButton = function()
-        local wall = Wall.create(0, 0)
+    createWoodWallButton = function()
+        local wall = WoodWall.create(0, 0)
         local button = createButton(wall)
 
         button.click = function(self)
-            SELECTED = Selected.create(Wall.create, wall.cost)
+            SELECTED = Selected.create(WoodWall.create, wall.cost)
+        end
+
+        return button
+    end,
+
+    createStoneWallButton = function()
+        local wall = StoneWall.create(0, 0)
+        local button = createButton(wall)
+
+        button.click = function(self)
+            SELECTED = Selected.create(StoneWall.create, wall.cost)
         end
 
         return button

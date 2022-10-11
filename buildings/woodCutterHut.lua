@@ -54,7 +54,7 @@ return {
                 return true
             end
 
-            if self.closestTarget and not self.noWorker and not self.forbid and WOOD_SPACE_AVAILABLE then
+            if self.closestTarget and self.hasWorker and not self.forbid and WOOD_SPACE_AVAILABLE then
                 if self.closestTarget.wood <= 0 then
                     self:getAOE()
                     self.progress = 0

@@ -7,6 +7,7 @@ return {
 
     update = function(self, dt)
         if POPULATION < MAX_POPULATION then
+            self.updateRate = 2
             self.progress = self.progress + self.updateRate * dt
             self.pct = self.progress / self.completeAmount
 
@@ -16,6 +17,7 @@ return {
                 setWorkers()
             end
         else
+            self.updateRate = 0
             self.progress = 0
             self.pct = nil
         end
@@ -23,7 +25,7 @@ return {
 
     draw = function(self)
         local x = 300
-        local y = 50
+        local y = 30
         local width = 100
         local offsetY = 25
 
@@ -41,6 +43,8 @@ return {
                 self.barHeight - 4
             )
             love.graphics.setColor(1, 1, 1)
+        else
+            love.graphics.draw(WARNING_IMAGE, x + 130, y + 8, 0, 0.25, 0.25, ICON_ORIGIN_X, ICON_ORIGIN_Y)
         end
     end
 }

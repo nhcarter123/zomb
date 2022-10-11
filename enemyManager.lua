@@ -28,11 +28,11 @@ return {
     spawn = function(self)
         local mod = 1 + math.random() / 4
         local strength = self:calculateBuildingWealth() + self:calculateResourceWealth() + POPULATION + TimeManager.day * 20
-        local groupCount = math.floor(math.random() * 8)
+        local groupCount = math.ceil(math.random() * 8)
         local totalEnemies = round(strength / 10)
 
         for i = 1, groupCount do
-            local groupSize = math.ceil(totalEnemies / groupCount)
+            local groupSize = math.ceil(totalEnemies / groupCount) -- this can be improved
             local groupX, groupY
 
 
@@ -53,7 +53,7 @@ return {
             end
 
             for j = 1, groupSize do
-                table.insert(enemyUnits, createZombie(groupX + (math.random() - 0.5) * GRID_SIZE, groupY + (math.random() - 0.5) * GRID_SIZE))
+                table.insert(enemyUnits, createZombie(groupX + (math.random() - 0.5) * GRID_SIZE * 3, groupY + (math.random() - 0.5) * GRID_SIZE * 3))
             end
         end
 

@@ -44,3 +44,39 @@ end
 function weightSort(object1, object2)
     return object1.weight < object2.weight
 end
+
+function workerSort(object1, object2)
+    local obj1Score = 0
+    local obj2Score = 0
+
+    if object1.pct then
+        obj1Score = object1.pct + 1
+    end
+
+    if object1.hasWorker then
+        obj1Score = obj1Score + 1
+    end
+
+    if object2.pct then
+        obj2Score = object2.pct + 1
+    end
+
+    if object2.hasWorker then
+        obj2Score = obj2Score + 1
+    end
+
+    return obj1Score > obj2Score
+end
+
+function merge(tbl1, tbl2)
+    local result = {}
+
+    for i = 1, #tbl1 do
+       table.insert(result, tbl1[i])
+    end
+    for i = 1, #tbl2 do
+        table.insert(result, tbl2[i])
+    end
+
+    return result
+end

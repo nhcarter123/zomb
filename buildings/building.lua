@@ -22,7 +22,6 @@ updateStorage = function()
                 end
 
                 if building.storesWood and (not type or type == "Wood") then
-                    wood = wood - savedAmount
                     local delta = math.min(wood, WOOD_MAX_STACK_SIZE)
 
                     if delta > 0 then
@@ -45,12 +44,16 @@ updateStorage = function()
                         }
                         storageSet = true
                     else
+                        if savedAmount > wood then
+                            type = nil
+                            storage = nil
+                        end
+
                         woodSpaceAvailable = true
                     end
                 end
 
                 if building.storesFood and (not type or type == "Food") and not storageSet then
-                    food = food - savedAmount
                     local delta = math.min(food, FOOD_MAX_STACK_SIZE)
 
                     if delta > 0 then
@@ -73,12 +76,16 @@ updateStorage = function()
                         }
                         storageSet = true
                     else
+                        if savedAmount > food then
+                            type = nil
+                            storage = nil
+                        end
+
                         foodSpaceAvailable = true
                     end
                 end
 
                 if building.storesStone and (not type or type == "Stone") and not storageSet then
-                    stone = stone - savedAmount
                     local delta = math.min(stone, STONE_MAX_STACK_SIZE)
 
                     if delta > 0 then
@@ -101,15 +108,20 @@ updateStorage = function()
                         }
                         storageSet = true
                     else
+                        if savedAmount > food then
+                            type = nil
+                            storage = nil
+                        end
+
                         stoneSpaceAvailable = true
                     end
                 end
 
                 if not storage then
                     anySpaceAvailable = true
-                else
-                    building.storage[j] = storage
                 end
+
+                building.storage[j] = storage
             end
         end
     end
@@ -123,21 +135,32 @@ setWorkers = function()
     local workerCount = POPULATION
     local residentCount = POPULATION
 
+    local workerBuildings = {}
+
     for i = 1, #buildings do
         local building = buildings[i]
         if building.needsWorker and not building.forbid then
-            if workerCount > 0 then
-                workerCount = workerCount - 1
-                building.noWorker = false
-            else
-                building.noWorker = true
-            end
+            table.insert(workerBuildings, building)
         end
 
         if building.isHouse then
             local delta = math.min(building.residentCapacity, residentCount)
             residentCount = residentCount - delta
             building.residentCount = delta
+        end
+    end
+
+    table.sort(workerBuildings, workerSort)
+
+    for i = 1, #workerBuildings do
+        local building = workerBuildings[i]
+        if building.needsWorker and not building.forbid then
+            if workerCount > 0 then
+                workerCount = workerCount - 1
+                building.hasWorker = true
+            else
+                building.hasWorker = false
+            end
         end
     end
 end
@@ -179,8 +202,8 @@ return {
             gridX = gridX,
             gridY = gridY,
             image = image,
-            health = 50,
-            maxHealth = 50,
+            health = 30,
+            maxHealth = 30,
             angle = 0,
             originX = image:getWidth() / 2,
             originY = image:getHeight() / 2,
@@ -196,6 +219,14 @@ return {
             update = function(self)
                 if self.health <= 0 then
                     self:setGrid(true)
+
+                    if self.needsWorker then
+                        setWorkers()
+                    end
+
+                    if self.isWall or self.connectsWithWall then
+                        self:setWallImages()
+                    end
 
                     return true -- flag for deletion
                 end
@@ -262,7 +293,7 @@ return {
 
                 if self.forbid then
                     love.graphics.draw(REMOVE_IMAGE, self.x, self.y, self.angle, 0.25, 0.25, ICON_ORIGIN_X, ICON_ORIGIN_Y)
-                elseif self.noWorker then
+                elseif not self.hasWorker and self.needsWorker and self.initialized then
                     love.graphics.draw(WARNING_IMAGE, self.x, self.y, self.angle, 0.25, 0.25, ICON_ORIGIN_X, ICON_ORIGIN_Y)
                 end
 
@@ -360,6 +391,11 @@ return {
 
             init = function(self)
                 self:setGrid()
+
+                if self.needsWorker then
+                    setWorkers()
+                end
+
                 self.initialized = true
             end
         }

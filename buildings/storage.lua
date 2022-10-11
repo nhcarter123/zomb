@@ -55,17 +55,22 @@ return {
 --            if self.alpha < 1 then
                 love.graphics.draw(STORAGE_FLOOR_IMAGE, self.x, self.y, self.angle, self.scale, self.scale, self.originX, self.originY)
 
+                local drawIndex = 0
+                local spacing = 32
                 for i = 1, #self.storage do
                     local storage = self.storage[i]
-                    local spacing = 32
-                    local x = i - 1
-                    local y = math.floor(x / 3)
-                    local xPos = self.x + (x - y * 3) * spacing - 32
-                    local yPos = self.y + y * spacing - 32
-                    love.graphics.draw(storage.image, xPos, yPos, 0, self.scale, self.scale, 32, 32)
+                    if storage then
+                        local x = drawIndex
+                        local y = math.floor(x / 3)
+                        local xPos = self.x + (x - y * 3) * spacing - 32
+                        local yPos = self.y + y * spacing - 32
+                        love.graphics.draw(storage.image, xPos, yPos, 0, self.scale, self.scale, 32, 32)
 
-                    if targetScale > 1.5 then
-                        love.graphics.print(tostring(storage.amount), xPos - 8, yPos + 4)
+                        if targetScale > 1.5 then
+                            love.graphics.print(tostring(storage.amount), xPos - 8, yPos + 4)
+                        end
+
+                        drawIndex = drawIndex + 1
                     end
                 end
 

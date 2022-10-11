@@ -21,6 +21,10 @@ return {
                         if FOOD < self.cost[i][2] then
                             canAfford = false
                         end
+                    elseif type == "Stone" then
+                        if STONE < self.cost[i][2] then
+                            canAfford = false
+                        end
                     end
                 end
 
@@ -61,6 +65,8 @@ return {
                             WOOD = WOOD - self.cost[i][2]
                         elseif type == "Food" then
                             FOOD = FOOD - self.cost[i][2]
+                        elseif type == "Stone" then
+                            STONE = STONE - self.cost[i][2]
                         end
                     end
 

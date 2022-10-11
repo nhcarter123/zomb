@@ -7,7 +7,7 @@ return love.graphics.newShader[[
         float alpha = 0;
         float length = shadow.x;
         // float baseAlpha = 0.9 - shadow.x * 3;
-        float baseAlpha = 0.78 - shadow.x - 2 * pow(shadow.x, 2);
+        float baseAlpha = 0.8 - shadow.x - 2 * pow(shadow.x, 2);
         //float slope = size.y / size.x;
 
         //vec2 scaledPos = (texturePos * 2 - 0.5);

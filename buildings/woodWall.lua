@@ -1,14 +1,15 @@
 return {
     create = function(gridX, gridY)
-        local building = Building.create(gridX, gridY, 0, 0, WALL_PIECE_1_IMAGE)
+        local building = Building.create(gridX, gridY, 0, 0, WOOD_WALL_1_IMAGE)
 
         building.title = "Wood wall"
         building.description =  "Cheap protection that stops enemies in their tracks"
         building.isWall = true
         building.scale = 0.54
-        building.health = 150
-        building.maxHealth = 150
-        building.cost = {{ "Wood", 1 }}
+        building.health = 100
+        building.maxHealth = 100
+        building.cost = {{ "Wood", 1 } }
+        building.material = "Wood"
 
         building.setImage = function(self)
             local canvas = love.graphics.newCanvas(256)
@@ -27,7 +28,7 @@ return {
 
             local padding = 1
             local tileSize = 128 + padding * 2
-            local cachedImage = WALL_PIECE_CACHE[hash]
+            local cachedImage = WALL_PIECE_CACHE[self.material][hash]
 
             if cachedImage then
                 self.image = cachedImage
@@ -39,9 +40,16 @@ return {
                     local value = string.sub(hash, i, i)
                     if value == "1" then
                         if i ~= 5 then
-                            local wallPiece = WALL_PIECE_2_IMAGE
+                            local wallPiece = WOOD_WALL_2_IMAGE
+                            if self.material == "Stone" then
+                                wallPiece = STONE_WALL_2_IMAGE
+                            end
+
                             if (i % 2) == 0 then
-                                wallPiece = WALL_PIECE_3_IMAGE
+                                wallPiece = WOOD_WALL_3_IMAGE
+                                if self.material == "Stone" then
+                                    wallPiece = STONE_WALL_3_IMAGE
+                                end
                             end
 
                             local angle = 270
@@ -59,12 +67,16 @@ return {
                     end
                 end
 
-                love.graphics.draw(WALL_PIECE_1_IMAGE, padding, padding)
+                if self.material == "Stone" then
+                    love.graphics.draw(STONE_WALL_1_IMAGE, padding, padding)
+                else
+                    love.graphics.draw(WOOD_WALL_1_IMAGE, padding, padding)
+                end
 
                 love.graphics.setCanvas()
 
                 self.image = canvas
-                WALL_PIECE_CACHE[hash] = canvas
+                WALL_PIECE_CACHE[self.material][hash] = canvas
             end
 
             self.originX = tileSize / 2

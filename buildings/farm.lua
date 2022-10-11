@@ -34,7 +34,7 @@ return {
                 return true
             end
 
-            if not self.noWorker and not self.forbid and FOOD_SPACE_AVAILABLE then
+            if self.hasWorker and not self.forbid and FOOD_SPACE_AVAILABLE then
                 self.progress = self.progress + self.updateRate * dt
                 self.pct = self.progress / self.completeAmount
 

@@ -24,7 +24,8 @@ require("ammo/45acp")
 require("ammo/arrow")
 
 Building = require("buildings/building")
-Wall = require("buildings/wall")
+WoodWall = require("buildings/woodWall")
+StoneWall = require("buildings/stoneWall")
 Tower = require("buildings/outpost")
 House = require("buildings/house")
 WoodCutterHut = require("buildings/woodCutterHut")
@@ -78,7 +79,7 @@ GRID_TILES = 30
 TOTAL_TILES = 2 * GRID_TILES + 1
 
 updateFieldCount = 0
-UPDATE_FIELD_DURATION = 1
+UPDATE_FIELD_DURATION = 4
 
 WORLD_GRAVITY = 9.8 * 40
 targetCamX = 0
@@ -97,7 +98,6 @@ SEARCH_NODES = {}
 MAX_SEARCHES = 2000
 
 MAX_POPULATION = 0
-MAX_WOOD = 0
 MAX_HAPPINESS = 100
 
 POPULATION = 4
@@ -106,7 +106,7 @@ HAPPINESS = 50
 ---- Resources
 WOOD = 60
 FOOD = 20
-STONE = 0
+STONE = 5
 WOOD_VALUE = 1
 FOOD_VALUE = 1
 STONE_VALUE = 2
@@ -118,7 +118,10 @@ STONE_MAX_STACK_SIZE = 50
 SELECTED = nil
 SELECTED_TAB = nil
 
-WALL_PIECE_CACHE = {}
+WALL_PIECE_CACHE = {
+    Wood = {},
+    Stone = {},
+}
 
 HOVERED_GRID_X = 0
 HOVERED_GRID_Y = 0
@@ -131,6 +134,7 @@ ICON_ORIGIN_Y = 64
 --     love.window.showMessageBox("test", tostring(M1_ABRAMS_BODY_IMAGE))
 
 function love.load()
+    math.randomseed(os.time())
 --    love.graphics.setDefaultFilter( 'nearest', 'nearest' )
 
 --    fb = gr.newFramebuffer(love.graphics.getWidth(), love.graphics.getHeight())
@@ -148,22 +152,14 @@ function love.load()
     ROCK_6_IMAGE = love.graphics.newImage("images/rock6.png")
     ROCK_7_IMAGE = love.graphics.newImage("images/rock7.png")
 
-    WALL_1_IMAGE = love.graphics.newImage("images/wall1.png")
-    WALL_2_IMAGE = love.graphics.newImage("images/wall2.png")
-    WALL_3_IMAGE = love.graphics.newImage("images/wall3.png")
-    WALL_4_IMAGE = love.graphics.newImage("images/wall4.png")
-    WALL_5_IMAGE = love.graphics.newImage("images/wall5.png")
-    WALL_6_IMAGE = love.graphics.newImage("images/wall6.png")
-    WALL_7_IMAGE = love.graphics.newImage("images/wall7.png")
-    WALL_8_IMAGE = love.graphics.newImage("images/wall8.png")
-    WALL_9_IMAGE = love.graphics.newImage("images/wall9.png")
-    WALL_10_IMAGE = love.graphics.newImage("images/wall10.png")
-    WALL_11_IMAGE = love.graphics.newImage("images/wall11.png")
-    WALL_12_IMAGE = love.graphics.newImage("images/wall12.png")
+    ---- Walls
+    WOOD_WALL_1_IMAGE = love.graphics.newImage("images/wallPiece1.png")
+    WOOD_WALL_2_IMAGE = love.graphics.newImage("images/wallPiece2.png")
+    WOOD_WALL_3_IMAGE = love.graphics.newImage("images/wallPiece3.png")
+    STONE_WALL_1_IMAGE = love.graphics.newImage("images/stoneWall1.png")
+    STONE_WALL_2_IMAGE = love.graphics.newImage("images/stoneWall2.png")
+    STONE_WALL_3_IMAGE = love.graphics.newImage("images/stoneWall3.png")
 
-    WALL_PIECE_1_IMAGE = love.graphics.newImage("images/wallPiece1.png")
-    WALL_PIECE_2_IMAGE = love.graphics.newImage("images/wallPiece2.png")
-    WALL_PIECE_3_IMAGE = love.graphics.newImage("images/wallPiece3.png")
 
     EXPLOSION_IMAGE = love.graphics.newImage("explosion6.png")
     ZOMBIE_IMAGE = love.graphics.newImage("images/zombie.png")
@@ -245,9 +241,9 @@ function love.load()
             Buttons.createStorageButton(),
         }),
         createTab("Defense", {
-            Buttons.createWallButton(),
+            Buttons.createWoodWallButton(),
+            Buttons.createStoneWallButton(),
             Buttons.createOutpostButton(),
---            createStorageButton(),
         }),
     }
 
@@ -337,10 +333,13 @@ function love.load()
 
 
     local house = House.create(-2, 0)
-    table.insert(buildings,house )
+    table.insert(buildings, house)
+    house:init()
+    local house = House.create(-1, 0)
+    table.insert(buildings,house)
     house:init()
 
-    local storage = Storage.create(3, 0)
+    local storage = Storage.create(1, 0)
     table.insert(buildings, storage)
     storage:init()
 
@@ -416,12 +415,13 @@ function calculateCostOfTravel(node, targetNode)
 --    score = score + 0.2 / (math.abs(node.y) + 1)
 
     local tile = grid[targetNode.x][targetNode.y]
+    local previousTile = grid[node.x][node.y]
 
     if tile.building then
-        score = score + 5
+        score = score + 5 * tile.building.health / 100
     end
 
-    return score
+    return score + previousTile.units / 4 + tile.units / 15
 end
 
 function getNeighbors(node)
@@ -704,8 +704,8 @@ function doesOverlap(gridX, gridY, shape)
                 gridX + i <= GRID_TILES and gridX + i >= -GRID_TILES and
                 gridY + j <= GRID_TILES and gridY + j >= -GRID_TILES
             then
-                local building = grid[gridX + i][gridY + j].building
-                if building then
+                local tile = grid[gridX + i][gridY + j]
+                if tile.building or tile.units > 0 then
                     return true
                 end
             else
@@ -843,8 +843,6 @@ function love.update(dt)
 
     if GRID_DIRTY then
         GRID_DIRTY = false
-        -- Maybe a better place to put this
-        setWorkers()
         calculateGrid()
     end
     processField()
@@ -882,12 +880,12 @@ function love.update(dt)
 --        targetCamY = currentY - (yDiff * PAN_SPEED * dt) / cam:getScale()
 --    end
 --
---    if updateFieldCount > UPDATE_FIELD_DURATION then
---        updateFieldCount = 0
---        calculateIntegrationField()
---    else
---        updateFieldCount = updateFieldCount + 1 * dt
---    end
+    if updateFieldCount > UPDATE_FIELD_DURATION then
+        updateFieldCount = 0
+        calculateIntegrationField()
+    else
+        updateFieldCount = updateFieldCount + 1 * dt
+    end
 
     local mouseDown = love.mouse.isDown(1)
     local aIsDown = love.keyboard.isDown("a")
@@ -981,7 +979,7 @@ function love.update(dt)
             local button = CURRENT_BUTTONS[i]
             if button == HOVERED_BUTTON then
                 if MB1_CLICKED then
-                    button:click(SELECTED_TILES)
+                    button:click(merge(SELECTED_TILES, SAVED_SELECTED_TILES))
                 end
                 mouseOverUi = true
             end
@@ -1188,6 +1186,7 @@ function love.update(dt)
     hud[2] = "Happiness: "..tostring(HAPPINESS).."/"..tostring(MAX_HAPPINESS)
     hud[3] = "Wood: "..tostring(WOOD)
     hud[4] = "Food: "..tostring(FOOD)
+    hud[5] = "Stone: "..tostring(STONE)
 
     debug[1] = "Current FPS: "..tostring(love.timer.getFPS())
     debug[2] = "enemies: "..tostring(#enemyUnits)
@@ -1273,13 +1272,11 @@ local function drawCameraStuff(l,t,w,h)
     --            love.graphics.rectangle('fill',i * GRID_SIZE, j * GRID_SIZE, 64, 64)
 
                 local flow = grid[i][j].flow
-                if flow[1] then
-                    if flow[1].x == 0 and flow[1].y == 0 then
-                        love.graphics.circle("fill", i * GRID_SIZE, j * GRID_SIZE, 2, 8)
-                    else
-        --                love.graphics.line(i * GRID_SIZE, j * GRID_SIZE, (i + flow.x / 3) * GRID_SIZE, (j + flow.y / 3) * GRID_SIZE)
-                        love.graphics.line(i * GRID_SIZE, j * GRID_SIZE, flow[1].nextTile.x, flow[1].nextTile.y)
-                    end
+                if flow[1].x == 0 and flow[1].y == 0 then
+                    love.graphics.circle("fill", i * GRID_SIZE, j * GRID_SIZE, 2, 8)
+                else
+    --                love.graphics.line(i * GRID_SIZE, j * GRID_SIZE, (i + flow.x / 3) * GRID_SIZE, (j + flow.y / 3) * GRID_SIZE)
+                    love.graphics.line(i * GRID_SIZE, j * GRID_SIZE, (i * GRID_SIZE + flow[1].nextTile.x) / 2, (flow[1].nextTile.y + j * GRID_SIZE) / 2)
                 end
             end
         end
@@ -1309,7 +1306,7 @@ function love.draw()
     end
 
     for i = 1, #hud, 1 do
-        love.graphics.print(hud[i], 20, 30 + (i - 1) * 30)
+        love.graphics.print(hud[i], 20, 30 + (i - 1) * 24)
     end
 
     for i = 1, #debug, 1 do

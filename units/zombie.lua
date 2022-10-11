@@ -2,9 +2,7 @@ function createZombie(x, y)
     local unit = createUnit(x, y, ZOMBIE_IMAGE)
 
 --    unit.animation = createAnimation(image, 72, 78, 1)
-    unit.gridX = nil
-    unit.gridY = nil
-    unit.spread = 0
+    unit.spread = GRID_SIZE * (math.random() - 0.5)
     unit.attackCount = 0
     unit.attackCooldownDuration = 1
     unit.attackDuration = unit.attackCooldownDuration + 1
@@ -19,12 +17,13 @@ function createZombie(x, y)
     unit.path = 1
     unit.targetX = 0
     unit.targetY = 0
-    unit.speedMod = 1 + math.random() / 4
+    unit.speedMod = 1 + math.random() / 3
 
 
     unit.update = function(self, dt, index)
         dt = dt * 12
         if self.health <= 0 then
+            grid[self.gridX][self.gridY].units = grid[self.gridX][self.gridY].units - 1
             return true -- flag for deletion
         end
 
@@ -54,21 +53,27 @@ function createZombie(x, y)
 
 --            self.spread = (self.spread + spreadFactor * rand) / 1.1
 
---            self.spread = 0
-
-            self.spread = (self.spread + 0.5 * GRID_SIZE * rand / threshold) / 1.5
-
 --            if not tile.tight then
-                self.spread = clamp(-GRID_SIZE, self.spread, GRID_SIZE)
+--                self.spread = clamp(-GRID_SIZE, self.spread, GRID_SIZE)
 --            else
 --                self.spread = clamp(-GRID_SIZE / 8, self.spread, GRID_SIZE / 8)
 --            end
-
             if self.gridX and self.gridY then
-                grid[self.gridX][self.gridY].units = grid[self.gridX][self.gridY].units - 1
-                grid[gridX][gridY].units = grid[gridX][gridY].units + 1
+                local previousTile = grid[self.gridX][self.gridY]
+                previousTile.units = previousTile.units - 1
+                tile.units = tile.units + 1
             else
-                grid[gridX][gridY].units = grid[gridX][gridY].units + 1
+                tile.units = tile.units + 1
+            end
+
+            self.attacking = false
+
+            if self.cachedTile == tile or not self.cachedTile then
+                if not tile.building then
+                    self.previousCachedTile = self.cachedTile
+                end
+                self.cachedTile = tile.flow[self.path].nextTile
+                self.attacking = true
             end
 
             self.gridX = gridX
@@ -88,7 +93,13 @@ function createZombie(x, y)
         local targetSpeed = 0
         local speed = 0
 
-        if tile.building and not tile.building.isTree and not tile.building.isStone then
+        if (tile.building and not tile.building.isStone and not tile.building.isTree) and self.attacking then
+            -- If the grid has updated and the last tile was actially better then stop attacking and go back
+            if self.previousCachedTile and self.previousCachedTile.weight < tile.weight then
+                self.attacking = false
+                self.cachedTile = self.previousCachedTile
+            end
+
             self.targetX = lerp(self.targetX, gridX * GRID_SIZE, 0.1)
             self.targetY = lerp(self.targetY, gridY * GRID_SIZE, 0.1)
             dir = angle(self.x, self.y, self.targetX, self.targetY)
@@ -123,22 +134,31 @@ function createZombie(x, y)
             self.attackCount = self.attackCount + dt
         else
             self.attackCount = 0
-            self.targetX = lerp(self.targetX, tile.flow[self.path].nextTile.x + lengthDirX(self.spread, tile.flow[self.path].dir + toRad(90)), 0.02)
-            self.targetY = lerp(self.targetY, tile.flow[self.path].nextTile.y + lengthDirY(self.spread, tile.flow[self.path].dir + toRad(90)), 0.02)
+--            self.targetX = lerp(self.targetX, tile.flow[self.path].nextTile.x + lengthDirX(self.spread, tile.flow[self.path].dir + toRad(90)), 0.02)
+--            self.targetY = lerp(self.targetY, tile.flow[self.path].nextTile.y + lengthDirY(self.spread, tile.flow[self.path].dir + toRad(90)), 0.02)
+
+            local spreadFactor = 1
+--            if tile.tight then
+--                spreadFactor = 0.25
+--            end
+
+            self.targetX = lerp(self.targetX, self.cachedTile.x + lengthDirX(spreadFactor * self.spread, tile.flow[self.path].dir + toRad(90)), 0.012)
+            self.targetY = lerp(self.targetY, self.cachedTile.y + lengthDirY(spreadFactor * self.spread, tile.flow[self.path].dir + toRad(90)), 0.012)
             dir = angle(self.x, self.y, self.targetX, self.targetY)
-            targetSpeed = self.speedMod * dt * 12000 / (tile.flow[self.path].nextTile.units + tile.units / 2 + 20)
+            targetSpeed = self.speedMod * dt * 40000 / (tile.flow[self.path].nextTile.units + tile.units / 2 + 35)
+--            targetSpeed = self.speedMod * dt * 2000
         end
 
-        speed = lerp(speed, targetSpeed, 0.1)
+        speed = lerp(speed, targetSpeed, 0.04)
 
 --        local speed = dt * 700 / (1 * nextTile.units + 8)
 --        local speed = dt * 100
 --        local mx = lengthDirX(speed, dir) + lengthDirX(speed * nextTile.units / 20, dir + toRad(90))
 --        local my = lengthDirY(speed, dir) + lengthDirY(speed * nextTile.units / 20, dir + toRad(90))
         local diff = angleDiff(toDeg(self.angle), toDeg(dir))
-        self.angle = self.angle - dt * diff / 12
+        self.angle = self.angle - dt * diff / 22
 
-        speed = 30 * speed / (math.abs(diff) + 20)
+        speed = 30 * speed / (math.abs(diff) + 30)
 
         self.vx = lengthDirX(speed, self.angle)
         self.vy = lengthDirY(speed, self.angle)
@@ -155,6 +175,12 @@ function createZombie(x, y)
         love.graphics.draw(self.image, self.x + self.attackOffsetX, self.y + self.attackOffsetY, self.angle, 0.5, 0.5, self.originX, self.originY)
 --        love.graphics.line(self.x, self.y, self.targetX, self.targetY)
 --        love.graphics.line(self.x, self.y, self.cachedTile.x, self.cachedTile.y)
+--        if self.previousCachedTile then
+--            love.graphics.line(self.x, self.y, self.previousCachedTile.x, self.previousCachedTile.y)
+--        end
+--        if self.cachedTile then
+--            love.graphics.line(self.x, self.y, self.cachedTile.x, self.cachedTile.y)
+--        end
 --        if GRID_DEBUG then
 --            love.graphics.line(self.x, self.y, self.cachedTile.flow[self.path].nextTile.x, self.cachedTile.flow[self.path].nextTile.y)
 --        end
