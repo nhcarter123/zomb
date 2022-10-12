@@ -34,6 +34,19 @@ return {
         return button
     end,
 
+    createCatapultTowerButton = function()
+        local tower = CatapultTower.create(0, 0)
+        local button = createButton(tower)
+
+        button.baseScale = 0.5
+
+        button.click = function(self)
+            SELECTED = Selected.create(CatapultTower.create, tower.cost)
+        end
+
+        return button
+    end,
+
     createFarmButton = function()
         local farm = Farm.create(0, 0)
         local button = createButton(farm)

@@ -12,13 +12,14 @@ return {
         building.gun = createBow()
         building.scale = 0.5
         building.height = 2
+        building.range = 8
         building.cost = {{ "Wood", 6 }}
         building.shape = {
             {1},
         }
 
         building.getAOE = function(self)
-            local tiles, targets = getGridCircle(self.gridX, self.gridY, 8)
+            local tiles, targets = getGridCircle(self.gridX, self.gridY, self.range)
             self.aoe = tiles
         end
 

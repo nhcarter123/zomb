@@ -29,7 +29,7 @@ return {
         local mod = 1 + math.random() / 4
         local strength = self:calculateBuildingWealth() + self:calculateResourceWealth() + POPULATION + TimeManager.day * 20
         local groupCount = math.ceil(math.random() * 8)
-        local totalEnemies = round(strength / 10)
+        local totalEnemies = round(strength / 9)
 
         for i = 1, groupCount do
             local groupSize = math.ceil(totalEnemies / groupCount) -- this can be improved

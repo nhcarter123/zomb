@@ -15,6 +15,7 @@ Buttons = require("buttons/buttons")
 
 require("guns/gun")
 require("guns/bow")
+Catapult = require("guns/catapult")
 require("guns/m1911")
 require("guns/m1AbramsTurret")
 
@@ -22,11 +23,13 @@ require("ammo/bullet")
 require("ammo/tankShell")
 require("ammo/45acp")
 require("ammo/arrow")
+Bullets = require("ammo/bullets")
 
 Building = require("buildings/building")
 WoodWall = require("buildings/woodWall")
 StoneWall = require("buildings/stoneWall")
 Tower = require("buildings/outpost")
+CatapultTower = require("buildings/catapultTower")
 House = require("buildings/house")
 WoodCutterHut = require("buildings/woodCutterHut")
 MiningCamp = require("buildings/miningCamp")
@@ -170,6 +173,7 @@ function love.load()
 
     BULLET_IMAGE = love.graphics.newImage("bullet.png")
     ARROW_IMAGE = love.graphics.newImage("images/arrow.png")
+    STONE_PROJECTILE_IMAGE = love.graphics.newImage("images/stoneProjectile.png")
 
     TANK_SHELL = love.graphics.newImage("tankShell.png")
     M1_ABRAMS_BODY_IMAGE = love.graphics.newImage("tankBody.png")
@@ -244,6 +248,7 @@ function love.load()
             Buttons.createWoodWallButton(),
             Buttons.createStoneWallButton(),
             Buttons.createOutpostButton(),
+            Buttons.createCatapultTowerButton(),
         }),
     }
 
@@ -1338,6 +1343,7 @@ function getClosest(x, y, targets, fuzziness, filter)
             if dist < lowestRange then
                 lowestRange = dist
                 closest = target
+
             end
         end
     end
