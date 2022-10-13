@@ -2,6 +2,7 @@ require("units/unit")
 require("units/archer")
 require("units/worker")
 require("units/zombie")
+Ogre = require("units/ogre")
 require("units/tanks/tank")
 require("units/tanks/m1Abrams")
 
@@ -165,7 +166,11 @@ function love.load()
 
 
     EXPLOSION_IMAGE = love.graphics.newImage("explosion6.png")
+
+    ---- Enemies
     ZOMBIE_IMAGE = love.graphics.newImage("images/zombie.png")
+    OGRE_IMAGE = love.graphics.newImage("images/ogre.png")
+
     ZOMBIE_SHEET = love.graphics.newImage("zombieSheet.png")
     ARCHER_IMAGE = love.graphics.newImage("images/archer.png")
     SOLDIER_IMAGE = love.graphics.newImage("images/worker.png")
@@ -426,7 +431,7 @@ function calculateCostOfTravel(node, targetNode)
         score = score + 5 * tile.building.health / 100
     end
 
-    return score + previousTile.units / 4 + tile.units / 15
+    return score + previousTile.units / 20 + tile.units / 35
 end
 
 function getNeighbors(node)
@@ -920,7 +925,8 @@ function love.update(dt)
         if mouseDown then
             local mx, my = love.mouse.getPosition()
             local worldMx, worldMy = cam:toWorld(mx, my)
-            table.insert(enemyUnits, createZombie(worldMx + (math.random() - 0.5) * 80, worldMy + (math.random() - 0.5) * 80))
+             table.insert(enemyUnits, createZombie(worldMx + (math.random() - 0.5) * 80, worldMy + (math.random() - 0.5) * 80))
+--            table.insert(enemyUnits, Ogre.create(worldMx + (math.random() - 0.5) * 80, worldMy + (math.random() - 0.5) * 80))
         end
     end
 
@@ -1141,9 +1147,24 @@ function love.update(dt)
 
     for i = #enemyUnits, 1, -1 do
         local shouldDelete = enemyUnits[i]:update(gameDt, i)
+
         if shouldDelete then
             table.remove(enemyUnits, i)
         end
+
+--        local e1 = enemyUnits[i]
+--        for j = #enemyUnits, 1, -1 do
+--            if j ~= i then
+--                local e2 = enemyUnits[j]
+--                local distance = dist(e1.x, e1.y, e2.x, e2.y)
+--
+--                if distance < 128 then
+--                    local dir = angle(e1.x, e1.y, e2.x, e2.y)
+--                    e1.x = e1.x - lengthDirX(800 * gameDt / (distance + 64), dir)
+--                    e1.y = e1.y - lengthDirY(800 * gameDt / (distance + 64), dir)
+--                end
+--            end
+--        end
     end
 
     love.graphics.setCanvas(DEBRIS_CANVAS)
@@ -1267,8 +1288,8 @@ local function drawCameraStuff(l,t,w,h)
     if GRID_DEBUG then
         for i = -GRID_TILES, GRID_TILES, 1 do
             for j = -GRID_TILES, GRID_TILES, 1 do
-                local value = grid[i][j].weight
-                love.graphics.print(tostring(roundDecimal(value, 2)), i * GRID_SIZE, j * GRID_SIZE)
+--                local value = grid[i][j].weight
+--                love.graphics.print(tostring(roundDecimal(value, 2)), i * GRID_SIZE, j * GRID_SIZE)
     --            local value = grid[i][j].building
     --            love.graphics.print(tostring(value), i * GRID_SIZE, j * GRID_SIZE)
 

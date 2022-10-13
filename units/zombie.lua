@@ -18,10 +18,11 @@ function createZombie(x, y)
     unit.targetX = 0
     unit.targetY = 0
     unit.speedMod = 1 + math.random() / 3
+    unit.timeScale = 1
 
 
     unit.update = function(self, dt, index)
-        dt = dt * 12
+        dt = dt * 12 * self.timeScale
         if self.health <= 0 then
             grid[self.gridX][self.gridY].units = grid[self.gridX][self.gridY].units - 1
             return true -- flag for deletion
@@ -32,8 +33,22 @@ function createZombie(x, y)
         local tile = grid[gridX][gridY]
 
         if gridX ~= self.gridX or gridY ~= self.gridY then
-            local threshold = 10 / (tile.flow[self.path].nextTile.units + tile.units + 4)
+            local threshold = 20 / (tile.flow[self.path].nextTile.units + tile.units + 5)
             local rand = (math.random() - 0.5)
+
+            if math.random() > threshold and self.cachedTile then
+                local randX = math.floor(math.random() * 3) - 1
+                local randY = math.floor(math.random() * 3) - 1
+
+                if randX ~= 0 and randY ~= 0 then
+--                    self.cachedTile = grid[toGridSpace(self.cachedTile.x + randX)][toGridSpace(self.cachedTile.y) + randY]
+--                    grid[gridX + randX][gridY + randY]
+                    local tile = grid[toGridSpace(self.cachedTile.x + randX)][toGridSpace(self.cachedTile.y) + randY]
+                    if not tile.building then
+                        self.cachedTile = grid[gridX + randX][gridY + randY]
+                    end
+                end
+            end
 
             self.path = 1
 --            if math.random() > threshold then
