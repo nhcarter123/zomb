@@ -3,9 +3,11 @@ return {
         local unit = createZombie(x, y)
 
         unit.image = OGRE_IMAGE
-        unit.timeScale = 0.5
-        unit.health = 400
-        unit.maxHealth = 400
+        unit.timeScale = 0.6
+        unit.health = 800
+        unit.maxHealth = 800
+        unit.size = 3
+        unit.damage = 20
 
         return unit
     end

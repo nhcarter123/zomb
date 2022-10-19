@@ -14,7 +14,7 @@ end
 
 return {
     spawnCount = 0,
-    spawnDuration = 48,
+    spawnDuration = 12,
 
     update = function(self, dt)
         self.spawnCount = self.spawnCount + dt
@@ -27,14 +27,15 @@ return {
 
     spawn = function(self)
         local mod = 1 + math.random() / 4
-        local strength = self:calculateBuildingWealth() + self:calculateResourceWealth() + POPULATION + TimeManager.day * 20
+        local strength =  self:calculateBuildingWealth() + self:calculateResourceWealth() + POPULATION + TimeManager.day * 30
+        local enemyPoints = round(40 + strength / 6)
         local groupCount = math.ceil(math.random() * 8)
-        local totalEnemies = round(strength / 9)
+        local zombieValue = 4
+        local ogreValue = 16
 
         for i = 1, groupCount do
-            local groupSize = math.ceil(totalEnemies / groupCount) -- this can be improved
+            local groupPoints = math.ceil(strength / groupCount) -- this can be improved
             local groupX, groupY
-
 
             if math.random() > 0.5 then
                 groupX = (GRID_TILES + 3) * GRID_SIZE
@@ -52,8 +53,31 @@ return {
                 end
             end
 
-            for j = 1, groupSize do
-                table.insert(enemyUnits, createZombie(groupX + (math.random() - 0.5) * GRID_SIZE * 3, groupY + (math.random() - 0.5) * GRID_SIZE * 3))
+            local dir = angle(groupX, groupY, 0, 0)
+            local distance = dist(groupX, groupY, 0, 0)
+
+            local points = 0
+            while points < groupPoints do
+                local x = groupX + (math.random() - 0.5) * GRID_SIZE * 3
+                local y = groupY + (math.random() - 0.5) * GRID_SIZE * 3
+                local rand = math.random()
+                local enemy
+
+                if rand > 0.75 and (groupPoints - points) > ogreValue then
+                    points = points + ogreValue
+                    enemy = Ogre.create(x, y)
+                else
+                    points = points + zombieValue
+                    enemy = createZombie(x, y)
+                end
+
+                local distFactor = math.pow(enemy.timeScale * distance, 2) / 20000
+
+                -- offset enemies by their speed
+                enemy.x = enemy.x - lengthDirX(distFactor, dir)
+                enemy.y = enemy.y - lengthDirY(distFactor, dir)
+
+                table.insert(enemyUnits, enemy)
             end
         end
 

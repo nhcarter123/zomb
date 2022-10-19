@@ -6,8 +6,8 @@ function createExplosion(x, y, image)
         originY = 24,
         animation = createAnimation(image, 48, 48, 1),
         dealtDamage = false,
-        radius = 60,
-        damage = 4000,
+        radius = 65,
+        damage = 5000,
 
         update = function(self, dt)
             dt = dt * 12

@@ -19,6 +19,8 @@ function createZombie(x, y)
     unit.targetY = 0
     unit.speedMod = 1 + math.random() / 3
     unit.timeScale = 1
+    unit.size = 1
+    unit.damage = 4
 
 
     unit.update = function(self, dt, index)
@@ -33,7 +35,7 @@ function createZombie(x, y)
         local tile = grid[gridX][gridY]
 
         if gridX ~= self.gridX or gridY ~= self.gridY then
-            local threshold = 20 / (tile.flow[self.path].nextTile.units + tile.units + 5)
+            local threshold = 20 / ((tile.flow[self.path].nextTile.units + tile.units + 5) * self.size)
             local rand = (math.random() - 0.5)
 
             if math.random() > threshold and self.cachedTile then
@@ -43,9 +45,27 @@ function createZombie(x, y)
                 if randX ~= 0 and randY ~= 0 then
 --                    self.cachedTile = grid[toGridSpace(self.cachedTile.x + randX)][toGridSpace(self.cachedTile.y) + randY]
 --                    grid[gridX + randX][gridY + randY]
-                    local tile = grid[toGridSpace(self.cachedTile.x + randX)][toGridSpace(self.cachedTile.y) + randY]
+
+                    local upRight = randX == 1 and randY == -1
+                    local downRight = randX == 1 and randY == 1
+                    local upLeft = randX == -1 and randY == -1
+                    local downLeft = randX == -1 and randY == 1
+
                     if not tile.building then
-                        self.cachedTile = grid[gridX + randX][gridY + randY]
+                        local left = grid[toGridSpace(self.cachedTile.x - 1)][toGridSpace(self.cachedTile.y)].building
+                        local up = grid[toGridSpace(self.cachedTile.x - 1)][toGridSpace(self.cachedTile.y)].building
+                        local right = grid[toGridSpace(self.cachedTile.x - 1)][toGridSpace(self.cachedTile.y)].building
+                        local down = grid[toGridSpace(self.cachedTile.x - 1)][toGridSpace(self.cachedTile.y)].building
+
+                        if
+                            (upRight and not (up and right)) or
+                            (downRight and not (down and right)) or
+                            (upLeft and not (up and left)) or
+                            (downLeft and not (down and left))
+                        then
+    --                        local nextTile = grid[toGridSpace(self.cachedTile.x + randX)][toGridSpace(self.cachedTile.y + randY)]
+                            self.cachedTile = grid[toGridSpace(self.cachedTile.x + randX)][toGridSpace(self.cachedTile.y + randY)]
+                        end
                     end
                 end
             end
@@ -134,7 +154,7 @@ function createZombie(x, y)
 
                 if pct > 0.109 then
                     if self.hadNotHitYet and tile.building then
-                        tile.building.health = tile.building.health - 1
+                        tile.building.health = tile.building.health - self.damage
                         self.hadNotHitYet = false
                     end
                     attackLength = 1 / pct - totalAttackTime
@@ -173,7 +193,7 @@ function createZombie(x, y)
         local diff = angleDiff(toDeg(self.angle), toDeg(dir))
         self.angle = self.angle - dt * diff / 22
 
-        speed = 30 * speed / (math.abs(diff) + 30)
+        speed = 15 * speed / (math.abs(diff) + 15)
 
         self.vx = lengthDirX(speed, self.angle)
         self.vy = lengthDirY(speed, self.angle)

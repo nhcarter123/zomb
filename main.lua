@@ -46,13 +46,15 @@ LineShader = require("shaders/lineShader")
 
 Selected = require("selected")
 
+Gamera = require("gamera")
+
+
 DescriptionPanel = require("descriptionPanel")
 TimeManager = require("timeManager")
 EnemyManager = require("enemyManager")
 CloudManager = require("cloudManager")
 PopulationManager = require("populationManager")
-
-gamera = require("gamera")
+MapManager = require("mapManager")
 
 love.window.setMode(600, 600, {
     fullscreen = true,
@@ -94,7 +96,7 @@ PAN_PADDING = 100
 PAN_SPEED = 10000
 worldWidth = 1600 * 10
 worldHeight = 900 * 10
-cam = gamera.new(-worldWidth / 2, -worldHeight / 2, worldWidth, worldHeight)
+cam = Gamera.new(-worldWidth / 2, -worldHeight / 2, worldWidth, worldHeight)
 
 SHADOW_SIZE = 5000
 
@@ -212,6 +214,7 @@ function love.load()
     WARNING_IMAGE = love.graphics.newImage("images/warning.png")
     PAUSE_IMAGE = love.graphics.newImage("images/pause.png")
     PLAY_IMAGE = love.graphics.newImage("images/play.png")
+    QUESTION_MARK_IMAGE = love.graphics.newImage("images/questionMark.png")
 
     ---- Resource Stacks
     ---- Wood
@@ -367,6 +370,7 @@ function love.load()
     TimeManager:setShadowLength()
 
     CloudManager:init()
+    MapManager:generate()
 end
 
 function calculateGrid()
@@ -679,22 +683,25 @@ function processField()
 end
 
 function love.wheelmoved(x, y)
-    if y > 0 then
-        targetScale = cam:getScale() + 0.3 * cam:getScale()
-    elseif y < 0 then
-        targetScale = cam:getScale() - 0.3 * cam:getScale()
+    if MapManager.open then
+        MapManager:scroll(y)
+    else
+        if y > 0 then
+            targetScale = cam:getScale() + 0.3 * cam:getScale()
+        elseif y < 0 then
+            targetScale = cam:getScale() - 0.3 * cam:getScale()
+        end
+
+        targetScale = clamp(0.7, targetScale, 3)
+
+        local mx, my = love.mouse.getPosition()
+        local xDiff = love.graphics.getWidth() / 2 - mx
+        local yDiff = love.graphics.getHeight() / 2 - my
+
+        local currentX, currentY = cam:getPosition()
+        targetCamX = currentX - (xDiff * sign(y) / 4) / cam:getScale()
+        targetCamY = currentY - (yDiff * sign(y) / 4) / cam:getScale()
     end
-
-    targetScale = clamp(0.7, targetScale, 3)
-
---    cam:setPosition(x, y)
-    local mx, my = love.mouse.getPosition()
-    local xDiff = love.graphics.getWidth() / 2 - mx
-    local yDiff = love.graphics.getHeight() / 2 - my
-
-    local currentX, currentY = cam:getPosition()
-    targetCamX = currentX - (xDiff * sign(y) / 4) / cam:getScale()
-    targetCamY = currentY - (yDiff * sign(y) / 4) / cam:getScale()
 end
 
 function toGridSpace(pos)
@@ -771,6 +778,9 @@ function love.keypressed(key, scancode, isrepeat)
         DEBUG_MODE = not DEBUG_MODE
     end
 
+    if key == "f4" then
+        MapManager:generate()
+    end
 end
 
 function love.keyreleased(key, scancode, isrepeat)
@@ -870,6 +880,7 @@ function love.update(dt)
     EnemyManager:update(gameDt)
     CloudManager:update(gameDt)
     PopulationManager:update(gameDt)
+    MapManager:update()
 
     -- Border Pan
 --    local xDiff = (love.graphics.getWidth() / 2 - mx) / love.graphics.getWidth()
@@ -925,8 +936,8 @@ function love.update(dt)
         if mouseDown then
             local mx, my = love.mouse.getPosition()
             local worldMx, worldMy = cam:toWorld(mx, my)
-             table.insert(enemyUnits, createZombie(worldMx + (math.random() - 0.5) * 80, worldMy + (math.random() - 0.5) * 80))
---            table.insert(enemyUnits, Ogre.create(worldMx + (math.random() - 0.5) * 80, worldMy + (math.random() - 0.5) * 80))
+--             table.insert(enemyUnits, createZombie(worldMx + (math.random() - 0.5) * 80, worldMy + (math.random() - 0.5) * 80))
+            table.insert(enemyUnits, Ogre.create(worldMx + (math.random() - 0.5) * 80, worldMy + (math.random() - 0.5) * 80))
         end
     end
 
@@ -1250,13 +1261,13 @@ local function drawCameraStuff(l,t,w,h)
     end
     love.graphics.setShader()
 
-    for i = 1, #enemyUnits, 1 do
-        enemyUnits[i]:draw()
-    end
     for i = #buildings, 1, -1 do
         buildings[i]:draw()
     end
 
+    for i = 1, #enemyUnits, 1 do
+        enemyUnits[i]:draw()
+    end
 --    love.graphics.draw(SPRITE_BATCH)
 
     for i = 1,#bullets,1 do
@@ -1322,6 +1333,7 @@ function love.draw()
     TimeManager:draw()
     PopulationManager:draw()
     DescriptionPanel:draw()
+    MapManager:draw()
 
     for i = 1, #TABS do
         TABS[i]:draw()
