@@ -44,7 +44,7 @@ return {
             )
             love.graphics.setColor(1, 1, 1)
         else
-            love.graphics.draw(WARNING_IMAGE, x + 130, y + 8, 0, 0.25, 0.25, ICON_ORIGIN_X, ICON_ORIGIN_Y)
+            love.graphics.draw(WARNING_ICON_IMAGE, x + 130, y + 8, 0, 0.25, 0.25, ICON_ORIGIN_X, ICON_ORIGIN_Y)
         end
     end
 }

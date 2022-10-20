@@ -292,9 +292,9 @@ return {
                 end
 
                 if self.forbid then
-                    love.graphics.draw(REMOVE_IMAGE, self.x, self.y, self.angle, 0.25, 0.25, ICON_ORIGIN_X, ICON_ORIGIN_Y)
+                    love.graphics.draw(REMOVE_ICON_IMAGE, self.x, self.y, self.angle, 0.25, 0.25, ICON_ORIGIN_X, ICON_ORIGIN_Y)
                 elseif not self.hasWorker and self.needsWorker and self.initialized then
-                    love.graphics.draw(WARNING_IMAGE, self.x, self.y, self.angle, 0.25, 0.25, ICON_ORIGIN_X, ICON_ORIGIN_Y)
+                    love.graphics.draw(WARNING_ICON_IMAGE, self.x, self.y, self.angle, 0.25, 0.25, ICON_ORIGIN_X, ICON_ORIGIN_Y)
                 end
 
                 if self.pct then

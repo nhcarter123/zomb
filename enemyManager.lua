@@ -14,7 +14,7 @@ end
 
 return {
     spawnCount = 0,
-    spawnDuration = 12,
+    spawnDuration = 120000,
 
     update = function(self, dt)
         self.spawnCount = self.spawnCount + dt

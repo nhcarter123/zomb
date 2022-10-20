@@ -14,10 +14,11 @@ end
 
 local TimeManager = {
     day = 1,
-    time = 10,
+    time = 12,
+    startTime = 12,
     timeScale = 1,
     shadowLength = 0,
-    maxTimeScale = 6,
+    maxTimeScale = 5,
     shadowAngle = toRad(-45),
     paused = false,
     enemySpawnTimer = 24,
@@ -33,10 +34,10 @@ local TimeManager = {
 --        end
 
 --        self.shadowLength = -math.sin((x + 8) * math.pi / 20) / 3
-        self.shadowLength = 0.044 * math.abs(self.time - 12)
+        self.shadowLength = 0.044 * math.abs(self.time - 12.5)
         local angle = self.shadowAngle
 
-        if self.time > 12 then
+        if self.time > 12.5 then
            angle = angle + toRad(180)
         end
 
@@ -67,7 +68,7 @@ local TimeManager = {
         if self.paused then
             dt = 0
         else
-            dt = math.pow(2, self.timeScale - 1) * dt / 16
+            dt = math.pow(3, self.timeScale - 1) * dt / 16
         end
 
         self.time = self.time + dt
@@ -79,8 +80,8 @@ local TimeManager = {
 
         self:setShadowLength()
 
-        if self.maxTimeScale < 6 and #enemyUnits == 0 then
-            self.maxTimeScale = 6
+        if self.maxTimeScale < 5 and #enemyUnits == 0 then
+            self.maxTimeScale = 5
         end
 
         return dt
@@ -103,10 +104,10 @@ local TimeManager = {
         love.graphics.print("Time: "..formatTime(self.time), love.graphics.getWidth() - 120, love.graphics.getHeight() - 65)
 
         if self.paused then
-            love.graphics.draw(PAUSE_IMAGE, love.graphics.getWidth() - 110, love.graphics.getHeight() - 35, 0, 0.15, 0.15, ICON_ORIGIN_X, ICON_ORIGIN_Y)
+            love.graphics.draw(PAUSE_ICON_IMAGE, love.graphics.getWidth() - 110, love.graphics.getHeight() - 35, 0, 0.15, 0.15, ICON_ORIGIN_X, ICON_ORIGIN_Y)
         else
             for i = 1, self.timeScale do
-                love.graphics.draw(PLAY_IMAGE, love.graphics.getWidth() - 110 + (i - 1) * 12, love.graphics.getHeight() - 35, 0, 0.15, 0.15, ICON_ORIGIN_X, ICON_ORIGIN_Y)
+                love.graphics.draw(PLAY_ICON_IMAGE, love.graphics.getWidth() - 110 + (i - 1) * 12, love.graphics.getHeight() - 35, 0, 0.15, 0.15, ICON_ORIGIN_X, ICON_ORIGIN_Y)
             end
         end
     end

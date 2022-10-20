@@ -110,7 +110,7 @@ return {
 
     createForbidButton = function()
         local button = createButton({
-            image = REMOVE_IMAGE
+            image = REMOVE_ICON_IMAGE
         }, {})
 
         button.baseScale = 0.5

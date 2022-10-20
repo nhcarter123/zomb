@@ -210,11 +210,19 @@ function love.load()
     GRASS_IMAGE = love.graphics.newImage("images/grass.png")
 
     ---- Icons
-    REMOVE_IMAGE = love.graphics.newImage("images/remove.png")
-    WARNING_IMAGE = love.graphics.newImage("images/warning.png")
-    PAUSE_IMAGE = love.graphics.newImage("images/pause.png")
-    PLAY_IMAGE = love.graphics.newImage("images/play.png")
-    QUESTION_MARK_IMAGE = love.graphics.newImage("images/questionMark.png")
+    REMOVE_ICON_IMAGE = love.graphics.newImage("images/icons/remove.png")
+    WARNING_ICON_IMAGE = love.graphics.newImage("images/icons/warning.png")
+    PAUSE_ICON_IMAGE = love.graphics.newImage("images/icons/pause.png")
+    PLAY_ICON_IMAGE = love.graphics.newImage("images/icons/play.png")
+    QUESTION_MARK_ICON_IMAGE = love.graphics.newImage("images/icons/questionMark.png")
+    BOSS_ICON_IMAGE = love.graphics.newImage("images/icons/boss.png")
+    ENEMY_ICON_IMAGE = love.graphics.newImage("images/icons/enemy.png")
+    BREAD_ICON_IMAGE = love.graphics.newImage("images/icons/bread.png")
+    PERSON_ICON_IMAGE = love.graphics.newImage("images/icons/person.png")
+    STONES_ICON_IMAGE = love.graphics.newImage("images/icons/stones.png")
+    WOOD_ICON_IMAGE = love.graphics.newImage("images/icons/wood.png")
+    TREASURE_ICON_IMAGE = love.graphics.newImage("images/icons/treasure.png")
+    HOME_ICON_IMAGE = love.graphics.newImage("images/icons/home.png")
 
     ---- Resource Stacks
     ---- Wood
@@ -735,6 +743,10 @@ end
 function love.keypressed(key, scancode, isrepeat)
     if key == "escape" then
         love.event.quit()
+    end
+
+    if key == "tab" then
+        MapManager.open = not MapManager.open
     end
 
     if key == "space" then
