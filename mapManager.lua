@@ -68,7 +68,7 @@ local getNodeMetadata = function(type)
     love.window.showMessageBox("test", tostring(type))
 end
 
-local createNode = function(type, x, y)
+local createNode = function(type, x, y, index)
     return {
         x = x,
         y = y,
@@ -76,6 +76,8 @@ local createNode = function(type, x, y)
         visited = false,
         nextNodes = {},
         children = 0,
+        scale = 1,
+        index = index,
     }
 end
 
@@ -92,7 +94,8 @@ return {
     scrollPadding = scrollPadding,
     currentRow = 1,
     currentNode = 1,
-    currentPath = 1,
+    needsToChoose = true,
+    pct = 0,
 
     generate = function(self)
         local centerX = love.graphics.getWidth() / 2
@@ -108,7 +111,7 @@ return {
             local y = mapHeight - (i - 0.5) * nodeSpacingY
 
             if i == 1 then
-                local startNode = createNode(type, 0, y)
+                local startNode = createNode(type, 0, y, 1)
                 startNode.visited = true
                 self.nodes[i] = { startNode }
             else
@@ -122,9 +125,9 @@ return {
                 end
 
                 local rand = math.random()
-                if math.random() > 0.75 then
+                if rand > 0.4 then
                     targetNodesCount = targetNodesCount + 1
-                elseif math.random() > 0.5 then
+                else
                     targetNodesCount = targetNodesCount - 1
                 end
 
@@ -164,7 +167,7 @@ return {
                         end
                     end
 
-                    local newNode = createNode(type, x + offsetX, y + offsetY)
+                    local newNode = createNode(type, x + offsetX, y + offsetY, j)
                     table.insert(nodes, newNode)
                 end
 
@@ -222,13 +225,46 @@ return {
     end,
 
     update = function(self)
-        local currentX, currentY = self.camera:getPosition()
-        local y = lerp(currentY, self.scrollY, 0.05)
-        self.camera:setPosition(0, y)
+        if self.open then
+            local currentX, currentY = self.camera:getPosition()
+            local y = lerp(currentY, self.scrollY, 0.05)
+            self.camera:setPosition(0, y)
+        end
+
+        if self.currentPath then
+            local row = self.nodes[self.currentRow]
+            local node = row[self.currentNode]
+            local nextNode = node.nextNodes[self.currentPath]
+
+            if nextNode then
+                local height = mapHeight - (0.5) * nodeSpacingY - (24 * (TimeManager.day - 1) + (TimeManager.time - TimeManager.startTime)) * nodeSpacingY / 24
+                self.pct = (height - node.y) / (nextNode.y - node.y)
+
+                if self.pct >= 1 then
+                    nextNode.visited = true
+                    if #nextNode.nextNodes > 1 then
+                        self.needsToChoose = true
+                        self.currentPath = nil
+                    else
+                        self.currentPath = 1
+                    end
+
+                    self.currentNode = nextNode.index
+                    self.currentRow = self.currentRow + 1
+                end
+            end
+        end
+
+        if self.needsToChoose then
+            TimeManager.paused = true
+        end
     end,
 
     draw = function(self)
         if self.open then
+            local mx, my = love.mouse.getPosition()
+            local worldMx, worldMy = self.camera:toWorld(mx, my)
+
             local centerX = love.graphics.getWidth() / 2
             local centerY = love.graphics.getHeight() / 2
             local borderSize = 4
@@ -255,12 +291,12 @@ return {
 --                    love.graphics.circle("fill", 50, mapHeight - (0.5) * nodeSpacingY - (24 * (TimeManager.day - 1) + (TimeManager.time - TimeManager.startTime)) * nodeSpacingY / 24, 10)
 
                     local progressX = 0
-                    local progressY = 0
+                    local progressY = 9999
 
                     for i = 1, #self.nodes do
-                        local nodes = self.nodes[i]
-                        for j = 1, #nodes do
-                            local node = nodes[j]
+                        local row = self.nodes[i]
+                        for j = 1, #row do
+                            local node = row[j]
                             local data = getNodeMetadata(node.type)
 
                             for k = 1, #node.nextNodes do
@@ -278,7 +314,7 @@ return {
                                 local lineY2 = nextNode.y - offsetY2
 
                                 if node.visited and nextNode.visited then
-                                    love.graphics.setLineWidth(5)
+                                    love.graphics.setLineWidth(6)
                                     love.graphics.setColor(0, 0, 0)
                                 else
                                     love.graphics.setLineWidth(4)
@@ -287,30 +323,53 @@ return {
 
                                 love.graphics.line(lineX1, lineY1, lineX2, lineY2)
 
-                                if self.currentRow == i and self.currentNode == j and self.currentPath == k then
-                                    local height = mapHeight - (0.5) * nodeSpacingY - (24 * (TimeManager.day - 1) + (TimeManager.time - TimeManager.startTime)) * nodeSpacingY / 24
-                                    local pct = (height - node.y) / (nextNode.y - node.y)
-
-                                    if pct >= 1 then
-                                        self.currentRow = self.currentRow + 1
-                                        nextNode.visited = true
+                                if self.currentRow == i and self.currentNode == j then
+                                    if self.needsToChoose then
+                                        nextNode.pathIndex = k
                                     end
 
-                                    progressX = lineX1 * (1 - pct) + lineX2 * pct
-                                    progressY = lineY1 * (1 - pct) + lineY2 * pct
+                                    if self.currentPath == k and self.pct < 1 then
+                                        progressX = lineX1 * (1 - self.pct) + lineX2 * self.pct
+                                        progressY = lineY1 * (1 - self.pct) + lineY2 * self.pct
 
-                                    love.graphics.setLineWidth(5)
-                                    love.graphics.setColor(0, 0, 0)
-                                    love.graphics.line(lineX1, lineY1, progressX, progressY)
+                                        love.graphics.setLineWidth(5)
+                                        love.graphics.setColor(0, 0, 0)
+                                        love.graphics.line(lineX1, lineY1, progressX, progressY)
+                                    end
                                 end
                             end
+
+                            local scale = 0.7
+
+                            if node.pathIndex then
+                                local distance = dist(worldMx, worldMy, node.x, node.y)
+                                if distance < 50 then
+                                    node.scale = lerp(node.scale, 1.3, 0.04)
+
+                                    if love.mouse.isDown(1) then
+                                        self.currentPath = node.pathIndex
+                                        self.needsToChoose = false
+                                        TimeManager.paused = false
+                                    end
+                                else
+                                    node.scale = lerp(node.scale, 1 + math.sin(4 * time) / 7, 0.04)
+                                end
+                            else
+                                node.scale = lerp(node.scale, 1, 0.04)
+                            end
+                            node.pathIndex = nil
+
                             love.graphics.setColor(1, 1, 1)
-                            love.graphics.draw(data.image, node.x, node.y, 0, 0.7, 0.7, data.offset, data.offset)
+                            love.graphics.draw(data.image, node.x, node.y, 0, node.scale * 0.7, node.scale * 0.7, data.offset, data.offset)
+
+                            if node.visited then
+                                love.graphics.draw(CIRCLED_ICON_IMAGE, node.x, node.y, 0, 0.9, 0.9, 58, 45)
+                            end
                         end
                     end
 
                     love.graphics.setColor(0, 0, 0)
-                    love.graphics.circle("fill", progressX, progressY, 10)
+                    love.graphics.circle("fill", progressX, progressY, 3)
                 end
             )
 

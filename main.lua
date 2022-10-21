@@ -223,6 +223,7 @@ function love.load()
     WOOD_ICON_IMAGE = love.graphics.newImage("images/icons/wood.png")
     TREASURE_ICON_IMAGE = love.graphics.newImage("images/icons/treasure.png")
     HOME_ICON_IMAGE = love.graphics.newImage("images/icons/home.png")
+    CIRCLED_ICON_IMAGE = love.graphics.newImage("images/icons/circled.png")
 
     ---- Resource Stacks
     ---- Wood
@@ -751,7 +752,9 @@ function love.keypressed(key, scancode, isrepeat)
 
     if key == "space" then
 --        TimeManager:nextDay()
-        TimeManager.paused = not TimeManager.paused
+        if not MapManager.needsToChoose then
+            TimeManager.paused = not TimeManager.paused
+        end
     end
 
     if key == "right" then

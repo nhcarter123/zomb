@@ -68,7 +68,7 @@ local TimeManager = {
         if self.paused then
             dt = 0
         else
-            dt = math.pow(3, self.timeScale - 1) * dt / 16
+            dt = math.pow(4, self.timeScale - 1) * dt / 16
         end
 
         self.time = self.time + dt
