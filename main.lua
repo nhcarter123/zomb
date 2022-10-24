@@ -106,7 +106,7 @@ MAX_SEARCHES = 2000
 MAX_POPULATION = 0
 MAX_HAPPINESS = 100
 
-POPULATION = 4
+POPULATION = 0
 HAPPINESS = 50
 
 ---- Resources
@@ -128,6 +128,8 @@ WALL_PIECE_CACHE = {
     Wood = {},
     Stone = {},
 }
+
+CURRENT_BUTTONS = {}
 
 HOVERED_GRID_X = 0
 HOVERED_GRID_Y = 0
@@ -750,26 +752,25 @@ function love.keypressed(key, scancode, isrepeat)
         MapManager.open = not MapManager.open
     end
 
-    if key == "space" then
---        TimeManager:nextDay()
-        if not MapManager.needsToChoose then
+    if not MapManager.needsToChoose then
+        if key == "space" then
             TimeManager.paused = not TimeManager.paused
         end
-    end
 
-    if key == "right" then
-        TimeManager.paused = false
-        TimeManager.timeScale = TimeManager.timeScale + 1
-        if TimeManager.timeScale > TimeManager.maxTimeScale then
-            TimeManager.timeScale = TimeManager.maxTimeScale
+        if key == "right" then
+            TimeManager.paused = false
+            TimeManager.timeScale = TimeManager.timeScale + 1
+            if TimeManager.timeScale > TimeManager.maxTimeScale then
+                TimeManager.timeScale = TimeManager.maxTimeScale
+            end
         end
-    end
 
-    if key == "left" then
-        TimeManager.timeScale = TimeManager.timeScale - 1
-        if TimeManager.timeScale < 1 then
-            TimeManager.timeScale = 0
-            TimeManager.paused = true
+        if key == "left" then
+            TimeManager.timeScale = TimeManager.timeScale - 1
+            if TimeManager.timeScale < 1 then
+                TimeManager.timeScale = 0
+                TimeManager.paused = true
+            end
         end
     end
 
@@ -886,7 +887,6 @@ function love.update(dt)
     local worldMx, worldMy = cam:toWorld(mx, my)
     local gridX = toGridSpace(worldMx)
     local gridY = toGridSpace(worldMy)
-    HOVERED_TILE = grid[gridX][gridY]
 
     if SELECTED then
         SELECTED:update()
@@ -947,103 +947,153 @@ function love.update(dt)
         targetCamY = currentY + (PAN_SPEED * dt) / cam:getScale()
     end
 
-    if DEBUG_MODE then
-        if mouseDown then
-            local mx, my = love.mouse.getPosition()
-            local worldMx, worldMy = cam:toWorld(mx, my)
---             table.insert(enemyUnits, createZombie(worldMx + (math.random() - 0.5) * 80, worldMy + (math.random() - 0.5) * 80))
-            table.insert(enemyUnits, Ogre.create(worldMx + (math.random() - 0.5) * 80, worldMy + (math.random() - 0.5) * 80))
-        end
-    end
+    if not MapManager.open then
+        HOVERED_TILE = grid[gridX][gridY]
 
-    local windowBottom = love.graphics:getHeight()
 
-    for i = #TABS, 1, -1 do
-        TABS[i]:update(i * 150 - 130, windowBottom - 50)
-    end
-
-    CURRENT_BUTTONS = {}
-    if SELECTED_TAB then
-        CURRENT_BUTTONS = SELECTED_TAB.buttons
-    end
-
-    if #SELECTED_TILES > 0 then
-        table.insert(CURRENT_BUTTONS, FORBID_BUTTON)
-    end
-
-    for i = #CURRENT_BUTTONS, 1, -1 do
-        local button = CURRENT_BUTTONS[i]
-        local x = (i - 1) * 100 + 60
-        local y = windowBottom - 120
-        local leftBound = x - button.width / 2
-        local rightBound = x + button.width / 2
-        local topBound = y - button.height / 2
-        local bottomBound = y + button.height / 2
-
-        local thisButtonHovered = button == HOVERED_BUTTON
-
-        if
-            mx < rightBound and mx > leftBound and
-            my > topBound and my < bottomBound
-        then
-            if not thisButtonHovered then
-                HOVERED_BUTTON = button
-                if button.obj.cost and #button.obj.cost > 0 then
-                    DescriptionPanel:setInfo(button.obj)
-                    DescriptionPanel:setVisible(true)
-                end
+        if DEBUG_MODE then
+            if mouseDown then
+                local mx, my = love.mouse.getPosition()
+                local worldMx, worldMy = cam:toWorld(mx, my)
+    --             table.insert(enemyUnits, createZombie(worldMx + (math.random() - 0.5) * 80, worldMy + (math.random() - 0.5) * 80))
+                table.insert(enemyUnits, Ogre.create(worldMx + (math.random() - 0.5) * 80, worldMy + (math.random() - 0.5) * 80))
             end
-        elseif thisButtonHovered then
-            HOVERED_BUTTON = nil
-            DescriptionPanel:setVisible(false)
         end
 
-        button:update(x, y, thisButtonHovered)
-    end
+        local windowBottom = love.graphics:getHeight()
 
-    local mouseMovedTiles = false
-    if gridX ~= HOVERED_GRID_X or gridY ~= HOVERED_GRID_Y then
-        mouseMovedTiles = true
+        for i = #TABS, 1, -1 do
+            TABS[i]:update(i * 150 - 130, windowBottom - 50)
+        end
 
-        HOVERED_GRID_X = gridX
-        HOVERED_GRID_Y = gridY
-    end
+        CURRENT_BUTTONS = {}
+        if SELECTED_TAB then
+            CURRENT_BUTTONS = SELECTED_TAB.buttons
+        end
 
-    if mouseDown then
-        local mouseOverUi = false
+        if #SELECTED_TILES > 0 then
+            table.insert(CURRENT_BUTTONS, FORBID_BUTTON)
+        end
 
-        for i = 1, #CURRENT_BUTTONS do
+        for i = #CURRENT_BUTTONS, 1, -1 do
             local button = CURRENT_BUTTONS[i]
-            if button == HOVERED_BUTTON then
-                if MB1_CLICKED then
-                    button:click(merge(SELECTED_TILES, SAVED_SELECTED_TILES))
+            local x = (i - 1) * 100 + 60
+            local y = windowBottom - 120
+            local leftBound = x - button.width / 2
+            local rightBound = x + button.width / 2
+            local topBound = y - button.height / 2
+            local bottomBound = y + button.height / 2
+
+            local thisButtonHovered = button == HOVERED_BUTTON
+
+            if
+                mx < rightBound and mx > leftBound and
+                my > topBound and my < bottomBound
+            then
+                if not thisButtonHovered then
+                    HOVERED_BUTTON = button
+                    if button.obj.cost and #button.obj.cost > 0 then
+                        DescriptionPanel:setInfo(button.obj)
+                        DescriptionPanel:setVisible(true)
+                    end
                 end
-                mouseOverUi = true
+            elseif thisButtonHovered then
+                HOVERED_BUTTON = nil
+                DescriptionPanel:setVisible(false)
             end
+
+            button:update(x, y, thisButtonHovered)
         end
 
-        for i = 1, #TABS do
-            local tab = TABS[i]
-            if tab.hovered then
-                if MB1_CLICKED then
-                    tab:click()
-                end
-                mouseOverUi = true
-            end
+        local mouseMovedTiles = false
+        if gridX ~= HOVERED_GRID_X or gridY ~= HOVERED_GRID_Y then
+            mouseMovedTiles = true
+
+            HOVERED_GRID_X = gridX
+            HOVERED_GRID_Y = gridY
         end
 
-        if MB1_CLICKED then
-            if not mouseOverUi and not SELECTED then
-                SELECTED_TAB = nil
-                SELECT_ORIGIN_X = worldMx
-                SELECT_ORIGIN_Y = worldMy
+        if mouseDown then
+            local mouseOverUi = false
 
-                if SHIFT_IS_DOWN then
-                    for i = #SELECTED_TILES, 1, -1 do
-                        local tile = SELECTED_TILES[i]
-                        if not contains(SAVED_SELECTED_TILES, tile) then
-                            table.insert(SAVED_SELECTED_TILES, tile)
+            for i = 1, #CURRENT_BUTTONS do
+                local button = CURRENT_BUTTONS[i]
+                if button == HOVERED_BUTTON then
+                    if MB1_CLICKED then
+                        button:click(merge(SELECTED_TILES, SAVED_SELECTED_TILES))
+                    end
+                    mouseOverUi = true
+                end
+            end
+
+            for i = 1, #TABS do
+                local tab = TABS[i]
+                if tab.hovered then
+                    if MB1_CLICKED then
+                        tab:click()
+                    end
+                    mouseOverUi = true
+                end
+            end
+
+            if MB1_CLICKED then
+                if not mouseOverUi and not SELECTED then
+                    SELECTED_TAB = nil
+                    SELECT_ORIGIN_X = worldMx
+                    SELECT_ORIGIN_Y = worldMy
+
+                    if SHIFT_IS_DOWN then
+                        for i = #SELECTED_TILES, 1, -1 do
+                            local tile = SELECTED_TILES[i]
+                            if not contains(SAVED_SELECTED_TILES, tile) then
+                                table.insert(SAVED_SELECTED_TILES, tile)
+                            end
                         end
+                    else
+                        for i = 1, #SAVED_SELECTED_TILES do
+                            SAVED_SELECTED_TILES[i].building.highlighted = nil
+                        end
+                        for i = 1, #SELECTED_TILES do
+                            SELECTED_TILES[i].building.highlighted = nil
+                        end
+
+                        SAVED_SELECTED_TILES = {}
+                    end
+
+                    SELECTED_TILES = {}
+
+                    if HOVERED_TILE.building then
+                        if SHIFT_IS_DOWN and HOVERED_TILE.building.highlighted then
+                            for i = #SAVED_SELECTED_TILES, 1, -1 do
+                                local tile = SAVED_SELECTED_TILES[i]
+                                if tile == HOVERED_TILE then
+                                    table.remove(SAVED_SELECTED_TILES, i)
+                                    tile.building.highlighted = nil
+                                end
+                            end
+
+                            if #SAVED_SELECTED_TILES == 1 then
+                                local tile = SAVED_SELECTED_TILES[1]
+                                tile.building.highlighted = 2
+                                DescriptionPanel:setVisible(true)
+                                DescriptionPanel:setInfo(tile.building)
+                            else
+                                DescriptionPanel:setVisible(false)
+                            end
+                        else
+                            table.insert(SELECTED_TILES, HOVERED_TILE)
+
+                            if #SELECTED_TILES == 1 and #SAVED_SELECTED_TILES == 0 then
+                                HOVERED_TILE.building.highlighted = 2
+                                DescriptionPanel:setVisible(true)
+                                DescriptionPanel:setInfo(HOVERED_TILE.building)
+                            else
+                                HOVERED_TILE.building.highlighted = 1
+                                DescriptionPanel:setVisible(false)
+                            end
+                        end
+                    else
+                        DescriptionPanel:setVisible(false)
                     end
                 else
                     for i = 1, #SAVED_SELECTED_TILES do
@@ -1054,85 +1104,40 @@ function love.update(dt)
                     end
 
                     SAVED_SELECTED_TILES = {}
+                    SELECTED_TILES = {}
                 end
+            end
 
-                SELECTED_TILES = {}
 
-                if HOVERED_TILE.building then
-                    if SHIFT_IS_DOWN and HOVERED_TILE.building.highlighted then
-                        for i = #SAVED_SELECTED_TILES, 1, -1 do
-                            local tile = SAVED_SELECTED_TILES[i]
-                            if tile == HOVERED_TILE then
-                                table.remove(SAVED_SELECTED_TILES, i)
-                                tile.building.highlighted = nil
-                            end
-                        end
+            if SELECTED then
+                if (mouseMovedTiles or MB1_CLICKED) and not mouseOverUi then
+                    SELECTED:click()
+                end
+            elseif SELECT_ORIGIN_X then
+                SELECT_END_X = worldMx
+                SELECT_END_Y = worldMy
 
-                        if #SAVED_SELECTED_TILES == 1 then
-                            local tile = SAVED_SELECTED_TILES[1]
-                            tile.building.highlighted = 2
-                            DescriptionPanel:setVisible(true)
-                            DescriptionPanel:setInfo(tile.building)
-                        else
-                            DescriptionPanel:setVisible(false)
-                        end
-                    else
-                        table.insert(SELECTED_TILES, HOVERED_TILE)
+                if mouseMovedTiles then
+                    local originGridX = toGridSpace(SELECT_ORIGIN_X)
+                    local originGridY = toGridSpace(SELECT_ORIGIN_Y)
 
-                        if #SELECTED_TILES == 1 and #SAVED_SELECTED_TILES == 0 then
-                            HOVERED_TILE.building.highlighted = 2
-                            DescriptionPanel:setVisible(true)
-                            DescriptionPanel:setInfo(HOVERED_TILE.building)
-                        else
-                            HOVERED_TILE.building.highlighted = 1
-                            DescriptionPanel:setVisible(false)
-                        end
+                    for i = 1, #SELECTED_TILES do
+                        SELECTED_TILES[i].building.highlighted = nil
                     end
-                else
-                    DescriptionPanel:setVisible(false)
-                end
-            else
-                for i = 1, #SAVED_SELECTED_TILES do
-                    SAVED_SELECTED_TILES[i].building.highlighted = nil
-                end
-                for i = 1, #SELECTED_TILES do
-                    SELECTED_TILES[i].building.highlighted = nil
-                end
+                    SELECTED_TILES = {}
 
-                SAVED_SELECTED_TILES = {}
-                SELECTED_TILES = {}
-            end
-        end
+                    local loopStartX = math.min(gridX, originGridX)
+                    local loopEndX = math.max(gridX, originGridX)
+                    local loopStartY = math.min(gridY, originGridY)
+                    local loopEndY = math.max(gridY, originGridY)
 
-
-        if SELECTED then
-            if (mouseMovedTiles or MB1_CLICKED) and not mouseOverUi then
-                SELECTED:click()
-            end
-        elseif SELECT_ORIGIN_X then
-            SELECT_END_X = worldMx
-            SELECT_END_Y = worldMy
-
-            if mouseMovedTiles then
-                local originGridX = toGridSpace(SELECT_ORIGIN_X)
-                local originGridY = toGridSpace(SELECT_ORIGIN_Y)
-
-                for i = 1, #SELECTED_TILES do
-                    SELECTED_TILES[i].building.highlighted = nil
-                end
-                SELECTED_TILES = {}
-
-                local loopStartX = math.min(gridX, originGridX)
-                local loopEndX = math.max(gridX, originGridX)
-                local loopStartY = math.min(gridY, originGridY)
-                local loopEndY = math.max(gridY, originGridY)
-
-                for i = loopStartX, loopEndX do
-                    for j = loopStartY, loopEndY do
-                        local tile = grid[i][j]
-                        if tile.building then
-                            tile.building.highlighted = 1
-                            table.insert(SELECTED_TILES, tile)
+                    for i = loopStartX, loopEndX do
+                        for j = loopStartY, loopEndY do
+                            local tile = grid[i][j]
+                            if tile.building then
+                                tile.building.highlighted = 1
+                                table.insert(SELECTED_TILES, tile)
+                            end
                         end
                     end
                 end
@@ -1234,11 +1239,11 @@ function love.update(dt)
     local camY = lerp(currentY, targetCamY, 0.05)
     cam:setPosition(camX, camY)
 
-    hud[1] = "Population: "..tostring(POPULATION).."/"..tostring(MAX_POPULATION)
-    hud[2] = "Happiness: "..tostring(HAPPINESS).."/"..tostring(MAX_HAPPINESS)
-    hud[3] = "Wood: "..tostring(WOOD)
-    hud[4] = "Food: "..tostring(FOOD)
-    hud[5] = "Stone: "..tostring(STONE)
+--    hud[2] = "Happiness: "..tostring(HAPPINESS).."/"..tostring(MAX_HAPPINESS)
+    hud[1] = "Population: "..tostring(POPULATION)
+    hud[2] = "Wood: "..tostring(WOOD)
+    hud[3] = "Food: "..tostring(FOOD)
+    hud[4] = "Stone: "..tostring(STONE)
 
     debug[1] = "Current FPS: "..tostring(love.timer.getFPS())
     debug[2] = "enemies: "..tostring(#enemyUnits)
@@ -1346,12 +1351,13 @@ function love.draw()
     cam:draw(drawCameraStuff)
 
     TimeManager:draw()
-    PopulationManager:draw()
     DescriptionPanel:draw()
     MapManager:draw()
 
-    for i = 1, #TABS do
-        TABS[i]:draw()
+    if not MapManager.open then
+        for i = 1, #TABS do
+            TABS[i]:draw()
+        end
     end
 
     for i = 1, #CURRENT_BUTTONS do

@@ -218,6 +218,9 @@ return {
                 lastNodesCount = nodesCount
             end
         end
+
+        self.scrollY = mapHeight - self.scrollPadding
+        self.camera:setPosition(0, self.scrollY)
     end,
 
     scroll = function(self, y)
@@ -245,6 +248,7 @@ return {
                     if #nextNode.nextNodes > 1 then
                         self.needsToChoose = true
                         self.currentPath = nil
+                        self.open = true
                     else
                         self.currentPath = 1
                     end
@@ -349,6 +353,7 @@ return {
                                     if love.mouse.isDown(1) then
                                         self.currentPath = node.pathIndex
                                         self.needsToChoose = false
+                                        self.open = false
                                         TimeManager.paused = false
                                     end
                                 else
@@ -373,6 +378,7 @@ return {
                 end
             )
 
+            love.graphics.setColor(1, 1, 1)
             love.graphics.setLineWidth(1)
         end
     end

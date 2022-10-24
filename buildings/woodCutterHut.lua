@@ -17,13 +17,15 @@ return {
         building.scale = 0.5
         building.progress = 0
         building.updateRate = 1
-        building.completeAmount = 2
+        building.completeAmount = 1
         building.harvestYield = 1
         building.needsWorker = true
+        building.foodCost = 1 -- todo replace with more sophisticated solution in the future
 
         building.getStats = function(self)
             local stats = {
                 "Wood production: "..tostring(self.updateRate / self.completeAmount).." / hour",
+                "Food cost: "..tostring(self.foodCost).." / harvest",
             }
 
             if self.closestTarget then
@@ -55,23 +57,30 @@ return {
             end
 
             if self.closestTarget and self.hasWorker and not self.forbid and WOOD_SPACE_AVAILABLE then
-                if self.closestTarget.wood <= 0 then
-                    self:getAOE()
-                    self.progress = 0
-                end
+                if not self.paid then
+                    FOOD = FOOD - self.foodCost
+                    self.paid = true
+                else
+                    if self.closestTarget.wood <= 0 then
+                        self:getAOE()
+                        self.progress = 0
+                    end
 
-                self.progress = self.progress + self.updateRate * dt
-                self.pct = self.progress / self.completeAmount
+                    self.progress = self.progress + self.updateRate * dt
+                    self.pct = self.progress / self.completeAmount
 
-                if self.pct >= 1 then
-                    self.progress = 0
-                    local deltaWood = math.min(self.harvestYield, self.closestTarget.wood)
-                    self.closestTarget.wood = self.closestTarget.wood - deltaWood
-                    WOOD = WOOD + deltaWood
-                    updateStorage()
+                    if self.pct >= 1 then
+                        self.progress = 0
+                        self.paid = false
+                        local deltaWood = math.min(self.harvestYield, self.closestTarget.wood)
+                        self.closestTarget.wood = self.closestTarget.wood - deltaWood
+                        WOOD = WOOD + deltaWood
 
-                    if self.closestTarget.wood == 0 then
-                        self.closestTarget.health = 0
+                        updateStorage()
+
+                        if self.closestTarget.wood == 0 then
+                            self.closestTarget.health = 0
+                        end
                     end
                 end
             else

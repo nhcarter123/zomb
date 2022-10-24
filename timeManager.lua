@@ -34,10 +34,10 @@ local TimeManager = {
 --        end
 
 --        self.shadowLength = -math.sin((x + 8) * math.pi / 20) / 3
-        self.shadowLength = 0.044 * math.abs(self.time - 12.5)
+        self.shadowLength = 0.044 * math.abs(self.time - 13)
         local angle = self.shadowAngle
 
-        if self.time > 12.5 then
+        if self.time > 13 then
            angle = angle + toRad(180)
         end
 

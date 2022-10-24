@@ -142,12 +142,6 @@ setWorkers = function()
         if building.needsWorker and not building.forbid then
             table.insert(workerBuildings, building)
         end
-
-        if building.isHouse then
-            local delta = math.min(building.residentCapacity, residentCount)
-            residentCount = residentCount - delta
-            building.residentCount = delta
-        end
     end
 
     table.sort(workerBuildings, workerSort)
@@ -392,7 +386,7 @@ return {
             init = function(self)
                 self:setGrid()
 
-                if self.needsWorker then
+                if self.needsWorker or self.isHouse then
                     setWorkers()
                 end
 

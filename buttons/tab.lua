@@ -6,6 +6,8 @@ function createTab(text, buttons)
         width = 140,
         height = 45,
         borderWidth = 2,
+        x = 0,
+        y = 0,
 
         update = function(self, x, y)
             self.x = x
