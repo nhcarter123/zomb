@@ -4,7 +4,7 @@ return {
 
         building.title = "Catapult tower"
         building.description = "Attacks enemies"
-        building.cost = {{ "Wood", 6 }, { "Stone", 6 } }
+        building.cost = {{ "Wood", 15 }, { "Stone", 6 } }
         building.range = 11
         building.gun = Catapult.create()
 

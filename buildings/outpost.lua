@@ -13,7 +13,7 @@ return {
         building.scale = 0.5
         building.height = 2
         building.range = 8
-        building.cost = {{ "Wood", 6 }}
+        building.cost = {{ "Wood", 12 }}
         building.shape = {
             {1},
         }

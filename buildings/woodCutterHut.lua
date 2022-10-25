@@ -16,7 +16,7 @@ return {
         }
         building.scale = 0.5
         building.progress = 0
-        building.updateRate = 1
+        building.updateRate = 1 * PRODUCTION_MULTIPLIER
         building.completeAmount = 1
         building.harvestYield = 1
         building.needsWorker = true
@@ -58,8 +58,13 @@ return {
 
             if self.closestTarget and self.hasWorker and not self.forbid and WOOD_SPACE_AVAILABLE then
                 if not self.paid then
-                    FOOD = FOOD - self.foodCost
-                    self.paid = true
+                    if FOOD > 0 then
+                        FOOD = FOOD - self.foodCost
+                        self.paid = true
+                    else
+                        self.progress = 0
+                        self.pct = nil
+                    end
                 else
                     if self.closestTarget.wood <= 0 then
                         self:getAOE()

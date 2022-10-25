@@ -81,8 +81,12 @@ local createNode = function(type, x, y, index)
     }
 end
 
-local isTreasureIndex = function(len, n)
-    return n == math.ceil(len / 3) or n == math.ceil(2 * len / 3)
+--local isTreasureIndex = function(len, n)
+--    return n == math.ceil(len / 3) or n == math.ceil(2 * len / 3)
+--end
+
+local isEnemyIndex = function( n)
+    return (n + 1) % 2 == 0
 end
 
 return {
@@ -148,16 +152,16 @@ return {
                         offsetX = 0
                         offsetY = 0
                         type = "Boss"
-                    elseif isTreasureIndex(self.length, i) then
-                        type = "Treasure"
-                    elseif isTreasureIndex(self.length, i + 1) then
+                    elseif isEnemyIndex(i) then
                         type = "Enemy"
+--                    elseif isEnemyIndex(self.length, i + 1) then
+--                        type = "Enemy"
                     else
                         local rand = math.random()
                         if rand > 0.7 then
                             type = "Event"
-                        elseif rand > 0.55 then
-                            type = "Enemy"
+--                        elseif rand > 0.55 then
+--                            type = "Treasure"
                         elseif rand > 0.15 then
                             type = "Wood"
                         elseif rand > 0.1 then
@@ -243,12 +247,19 @@ return {
                 local height = mapHeight - (0.5) * nodeSpacingY - (24 * (TimeManager.day - 1) + (TimeManager.time - TimeManager.startTime)) * nodeSpacingY / 24
                 self.pct = (height - node.y) / (nextNode.y - node.y)
 
+                ---- Arrived at node
                 if self.pct >= 1 then
                     nextNode.visited = true
+
+                    if nextNode.type == "Enemy" then
+                        EnemyManager:spawn()
+                    end
+
                     if #nextNode.nextNodes > 1 then
                         self.needsToChoose = true
                         self.currentPath = nil
                         self.open = true
+                        SELECTED = nil
                     else
                         self.currentPath = 1
                     end

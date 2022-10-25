@@ -12,8 +12,8 @@ return {
         building.description = "Mines nearby boulders"
         building.scale = 0.5
         building.progress = 0
-        building.updateRate = 1
-        building.completeAmount = 6
+        building.updateRate = 1 * PRODUCTION_MULTIPLIER
+        building.completeAmount = 4
         building.harvestYield = 1
         building.height = 0.5
         building.needsWorker = true

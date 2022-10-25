@@ -20,9 +20,9 @@ return {
 
         local parentInit = building.init
         building.init = function(self)
-            parentInit(self)
             POPULATION = POPULATION + self.residentCount
 
+            parentInit(self)
         end
 
         building.getStats = function(self)

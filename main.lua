@@ -69,6 +69,8 @@ debug = {}
 hud = {}
 TABS = {}
 
+PRODUCTION_MULTIPLIER = 0.5
+
 playerUnits = {}
 enemyUnits = {}
 explosions = {}
@@ -796,6 +798,10 @@ function love.keypressed(key, scancode, isrepeat)
 
     if key == "f4" then
         MapManager:generate()
+    end
+
+    if key == "f5" then
+        EnemyManager:spawn()
     end
 end
 

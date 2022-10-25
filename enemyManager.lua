@@ -15,6 +15,7 @@ end
 return {
     spawnCount = 0,
     spawnDuration = 120000,
+    enemiesToSpawn = {},
 
     update = function(self, dt)
         self.spawnCount = self.spawnCount + dt
@@ -23,15 +24,29 @@ return {
             self.spawnCount = 0
             self:spawn()
         end
+
+        for i = #self.enemiesToSpawn, 1, -1 do
+            local enemy = self.enemiesToSpawn[i]
+
+            if enemy.delay > 0 then
+                enemy.delay = enemy.delay - dt
+            else
+                table.insert(enemyUnits, enemy)
+                table.remove(self.enemiesToSpawn, i)
+            end
+        end
     end,
 
     spawn = function(self)
         local mod = 1 + math.random() / 4
-        local strength =  self:calculateBuildingWealth() + self:calculateResourceWealth() + POPULATION + TimeManager.day * 30
-        local enemyPoints = round(40 + strength / 6)
+        local strength = (self:calculateBuildingWealth() + self:calculateResourceWealth()) / 1000 + POPULATION + TimeManager.day * 30
+        local enemyPoints = round(20 + strength / 4)
         local groupCount = math.ceil(math.random() * 8)
         local zombieValue = 4
         local ogreValue = 16
+
+        self.enemiesToSpawn = {}
+        local lowestDelay = 999
 
         for i = 1, groupCount do
             local groupPoints = math.ceil(strength / groupCount) -- this can be improved
@@ -71,18 +86,22 @@ return {
                     enemy = createZombie(x, y)
                 end
 
-                local distFactor = math.pow(enemy.timeScale * distance, 2) / 20000
+                enemy.delay = distance * (1 + math.random() * 0.75) * enemy.timeScale / 1000
 
-                -- offset enemies by their speed
-                enemy.x = enemy.x - lengthDirX(distFactor, dir)
-                enemy.y = enemy.y - lengthDirY(distFactor, dir)
+                if enemy.delay < lowestDelay then
+                    lowestDelay = enemy.delay
+                end
 
-                table.insert(enemyUnits, enemy)
+                table.insert(self.enemiesToSpawn, enemy)
             end
         end
 
+        for i = #self.enemiesToSpawn, 1, -1 do
+            local enemy = self.enemiesToSpawn[i]
+            enemy.delay = enemy.delay - lowestDelay
+        end
+
         TimeManager.timeScale = 1
-        TimeManager.maxTimeScale = 2
     end,
 
     calculateBuildingWealth = function()

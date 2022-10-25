@@ -17,11 +17,11 @@ function createZombie(x, y)
     unit.path = 1
     unit.targetX = 0
     unit.targetY = 0
-    unit.speedMod = 1 + math.random() / 3
+--    unit.speedMod = 1 + math.random() / 3
     unit.timeScale = 1
     unit.size = 1
     unit.damage = 4
-
+    unit.turnVel = 0
 
     unit.update = function(self, dt, index)
         dt = dt * 12 * self.timeScale
@@ -35,7 +35,7 @@ function createZombie(x, y)
         local tile = grid[gridX][gridY]
 
         if gridX ~= self.gridX or gridY ~= self.gridY then
-            local threshold = 20 / ((tile.flow[self.path].nextTile.units + tile.units + 5) * self.size)
+            local threshold = 15 / ((tile.flow[self.path].nextTile.units + tile.units + 5) * self.size)
             local rand = (math.random() - 0.5)
 
             if math.random() > threshold and self.cachedTile then
@@ -177,10 +177,10 @@ function createZombie(x, y)
 --                spreadFactor = 0.25
 --            end
 
-            self.targetX = lerp(self.targetX, self.cachedTile.x + lengthDirX(spreadFactor * self.spread, tile.flow[self.path].dir + toRad(90)), 0.012)
-            self.targetY = lerp(self.targetY, self.cachedTile.y + lengthDirY(spreadFactor * self.spread, tile.flow[self.path].dir + toRad(90)), 0.012)
+            self.targetX = self.cachedTile.x + lengthDirX(spreadFactor * self.spread, tile.flow[self.path].dir + toRad(90))
+            self.targetY = self.cachedTile.y + lengthDirY(spreadFactor * self.spread, tile.flow[self.path].dir + toRad(90))
             dir = angle(self.x, self.y, self.targetX, self.targetY)
-            targetSpeed = self.speedMod * dt * 40000 / (tile.flow[self.path].nextTile.units + tile.units / 2 + 35)
+            targetSpeed = 1 / (tile.flow[self.path].nextTile.units + tile.units / 2 + 35)
 --            targetSpeed = self.speedMod * dt * 2000
         end
 
@@ -191,9 +191,11 @@ function createZombie(x, y)
 --        local mx = lengthDirX(speed, dir) + lengthDirX(speed * nextTile.units / 20, dir + toRad(90))
 --        local my = lengthDirY(speed, dir) + lengthDirY(speed * nextTile.units / 20, dir + toRad(90))
         local diff = angleDiff(toDeg(self.angle), toDeg(dir))
-        self.angle = self.angle - dt * diff / 22
 
-        speed = 15 * speed / (math.abs(diff) + 15)
+        self.turnVel = lerp(self.turnVel, diff, 0.1)
+
+        self.angle = self.angle - dt * self.turnVel / 10
+        speed = dt * 2500000 * speed / (30 + math.abs(self.turnVel))
 
         self.vx = lengthDirX(speed, self.angle)
         self.vy = lengthDirY(speed, self.angle)
@@ -209,6 +211,7 @@ function createZombie(x, y)
     unit.draw = function(self)
         love.graphics.draw(self.image, self.x + self.attackOffsetX, self.y + self.attackOffsetY, self.angle, 0.5, 0.5, self.originX, self.originY)
 --        love.graphics.line(self.x, self.y, self.targetX, self.targetY)
+
 --        love.graphics.line(self.x, self.y, self.cachedTile.x, self.cachedTile.y)
 --        if self.previousCachedTile then
 --            love.graphics.line(self.x, self.y, self.previousCachedTile.x, self.previousCachedTile.y)

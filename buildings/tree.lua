@@ -14,13 +14,19 @@ return {
         building.title = "Tree"
         building.description = "A large oak tree"
         building.isTree = true
-        building.wood = 200
+        building.wood = 100
         building.height = 2
 --        building.angle = toRad(math.random() * 360)
         --    building.scale = 1
         --    building.scale = 0.16 + math.random() * 0.02
 --        building.scale = 0.42 + math.random() * 0.15
         building.scale = 0.32 + math.random() * 0.08
+
+        building.getStats = function(self)
+            return {
+                "Wood remaining: "..tostring(self.wood),
+            }
+        end
 
         return building
     end

@@ -6,7 +6,7 @@ return {
         building.description = "Grows food"
 
         building.progress = 0
-        building.updateRate = 2
+        building.updateRate = 2 * PRODUCTION_MULTIPLIER
         building.completeAmount = 1
         building.harvestYield = 1
         building.needsWorker = true

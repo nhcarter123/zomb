@@ -82,6 +82,8 @@ local TimeManager = {
 
         if self.maxTimeScale < 5 and #enemyUnits == 0 then
             self.maxTimeScale = 5
+        else
+            self.maxTimeScale = 2
         end
 
         return dt
