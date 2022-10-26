@@ -1,7 +1,6 @@
-function createGun(magazineSize, fireDelay, reloadDurtion, accuracy, velocityMod, minRange, maxRange, weight, ammo)
+function createGun(magazineSize, fireDelay, reloadDurtion, accuracy, velocityMod, minRange, weight, ammo)
     return {
         minRange = minRange,
-        maxRange = maxRange,
         magazineSize = magazineSize,
         magazineCount = magazineSize,
         weight = weight,

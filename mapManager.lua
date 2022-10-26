@@ -86,7 +86,7 @@ end
 --end
 
 local isEnemyIndex = function( n)
-    return (n + 1) % 2 == 0
+    return (n + 0) % 2 == 0
 end
 
 return {

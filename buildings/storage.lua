@@ -8,9 +8,7 @@ return {
         building.scale = 0.5
         building.alpha = 1
         building.height = 0
-        building.storesWood = true
-        building.storesFood = true
-        building.storesStone = true
+        building.isStorage = true
         building.storage = {}
         building.storageCapactiy = 9
         building.cost = {{ "Wood", 15 }}

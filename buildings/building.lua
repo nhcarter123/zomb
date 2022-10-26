@@ -142,6 +142,11 @@ setWorkers = function()
         if building.needsWorker and not building.forbid then
             table.insert(workerBuildings, building)
         end
+
+    -- Todo maybe move this
+        if building.isTotem then
+            building:getAOE()
+        end
     end
 
     table.sort(workerBuildings, workerSort)
@@ -159,26 +164,27 @@ setWorkers = function()
     end
 end
 
-getGridCircle = function(gridX, gridY, r, validFn)
-    local radius = r
+getGridCircle = function(gridX, gridY, r, validFn, offsetX, offsetY)
     local tiles = {}
     local targets = {}
 
-    for i = -r, r do
-        for j = -r, r do
-            local distance = dist(0, 0, i, j)
+    for i = -r, r + 1 do
+        for j = -r, r + 1 do
+            local distance = dist(offsetX, offsetY, i, j)
             if distance <= r then
-                local isValid = false
                 local x = gridX + i
                 local y = gridY + j
                 if x >= -GRID_TILES and x <= GRID_TILES and y >= -GRID_TILES and y <= GRID_TILES then
                     if grid[x] and validFn and validFn(grid[x][y]) then
-                        isValid = true
-                        table.insert(targets, grid[x][y].building)
+                        local potentialTarget = grid[x][y].building
+
+                        if not contains(targets, potentialTarget) then
+                            table.insert(targets, potentialTarget)
+                        end
                     end
                 end
 
-                table.insert(tiles, { i, j, isValid })
+                table.insert(tiles, { i, j })
             end
         end
     end
@@ -206,6 +212,7 @@ return {
             barHeight = 8,
             xPadding = 6,
             height = 1,
+            affectedBy = {},
 
             title = "Wood wall",
             description = "Cheap protection that stops enemies in their tracks",
@@ -252,23 +259,25 @@ return {
                 end
             end,
 
-            draw = function(self)
+            draw = function(self, isFloor)
 --                love.graphics.setColor(0, 0, 0, 0.3)
 --                love.graphics.draw(self.image, self.x + 20, self.y + 20, self.angle, self.scale, self.scale, self.originX, self.originY)
 --                love.graphics.setColor(1, 1, 1, 1)
 
-                love.graphics.draw(self.image, self.x, self.y, self.angle, self.scale, self.scale, self.originX, self.originY)
-
-                if self.highlighted or (HOVERED_TILE and HOVERED_TILE.building == self and not SELECTED) then
-                    if self.highlighted then
-                        OUTLINE_SHADER:send("opacity", 0.7)
-                    else
-                        OUTLINE_SHADER:send("opacity", 0.3)
-                    end
-
-                    love.graphics.setShader(OUTLINE_SHADER)
+                if (isFloor and self.height == 0) or (not isFloor and self.height > 0) then
                     love.graphics.draw(self.image, self.x, self.y, self.angle, self.scale, self.scale, self.originX, self.originY)
-                    love.graphics.setShader()
+
+                    if self.highlighted or (HOVERED_TILE and HOVERED_TILE.building == self and not SELECTED) then
+                        if self.highlighted then
+                            OUTLINE_SHADER:send("opacity", 0.7)
+                        else
+                            OUTLINE_SHADER:send("opacity", 0.3)
+                        end
+
+                        love.graphics.setShader(OUTLINE_SHADER)
+                        love.graphics.draw(self.image, self.x, self.y, self.angle, self.scale, self.scale, self.originX, self.originY)
+                        love.graphics.setShader()
+                    end
                 end
             end,
 
@@ -358,27 +367,27 @@ return {
                 for i = 1, #self.aoe do
                     local tile = self.aoe[i]
 
-                    if tile[3] then
-                        love.graphics.setColor(1, 1, 1, 0.42)
-                    else
-                        love.graphics.setColor(1, 1, 1, 0.1)
-                    end
+                    love.graphics.setColor(1, 1, 1, 0.1)
 
-                    love.graphics.rectangle("fill", self.x + (tile[1] - 0.5) * GRID_SIZE + 2, self.y + (tile[2] - 0.5) * GRID_SIZE + 2, GRID_SIZE - 4, GRID_SIZE - 4)
+                    love.graphics.rectangle("fill", self.x + (tile[1] - 0.5 - self.offsetX) * GRID_SIZE + 2, self.y + (tile[2] - 0.5 - self.offsetY) * GRID_SIZE + 2, GRID_SIZE - 4, GRID_SIZE - 4)
                 end
 
 
                 love.graphics.setColor(1, 1, 1)
 
-                if self.closestTarget then
+                if self.targets and self.targets[1] then
                     love.graphics.setShader(LineShader)
 
-                    local dir = angle(self.x, self.y, self.closestTarget.x, self.closestTarget.y)
-                    local dist = dist(self.x, self.y, self.closestTarget.x, self.closestTarget.y)
+                    for i = 1, #self.targets do
+                        local target = self.targets[i]
+                        local dir = angle(self.x, self.y, target.x, target.y)
+                        local dist = dist(self.x, self.y, target.x, target.y)
 
-                    LineShader:send("time", time)
-                    LineShader:send("scale", dist)
-                    love.graphics.draw(SHADOW_IMAGE, self.x, self.y, dir - toRad(90), 3, dist)
+                        LineShader:send("time", -time)
+                        LineShader:send("scale", dist)
+                        love.graphics.draw(SHADOW_IMAGE, self.x, self.y, dir - toRad(90), 3, dist)
+                    end
+
                     love.graphics.setShader()
                 end
             end,

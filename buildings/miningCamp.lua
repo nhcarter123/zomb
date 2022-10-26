@@ -13,7 +13,7 @@ return {
         building.scale = 0.5
         building.progress = 0
         building.updateRate = 1 * PRODUCTION_MULTIPLIER
-        building.completeAmount = 4
+        building.completeAmount = 1
         building.harvestYield = 1
         building.height = 0.5
         building.needsWorker = true
@@ -27,16 +27,21 @@ return {
                 "Mining rate: "..tostring(24 * self.updateRate / self.completeAmount).." / day",
             }
 
-            if self.closestTarget then
-                table.insert(stats, "Current boulder remaining stone: "..tostring(self.closestTarget.stone))
+            if self.targets[1] then
+                table.insert(stats, "Current boulder remaining stone: "..tostring(self.targets[1].stone))
             end
 
             return stats
         end
 
         building.getAOE = function(self)
-            local tiles, targets = getGridCircle(self.gridX, self.gridY, 5, isBoulder)
-            self.closestTarget = getClosest(self.gridX * GRID_SIZE, self.gridY * GRID_SIZE, targets)
+            local tiles, targets = getGridCircle(self.gridX, self.gridY, 5, isBoulder, 0, 0)
+            local closest = getClosest(self.gridX * GRID_SIZE, self.gridY * GRID_SIZE, targets)
+            if closest then
+                self.targets = { closest }
+            else
+                self.targets = {}
+            end
             self.aoe = tiles
         end
 
@@ -55,8 +60,8 @@ return {
                 return true
             end
 
-            if self.closestTarget and self.hasWorker and not self.forbid and STONE_SPACE_AVAILABLE then
-                if self.closestTarget.stone <= 0 then
+            if self.targets[1] and self.hasWorker and not self.forbid and STONE_SPACE_AVAILABLE then
+                if self.targets[1].stone <= 0 then
                     self:getAOE()
                     self.progress = 0
                 end
@@ -66,13 +71,13 @@ return {
 
                 if self.pct >= 1 then
                     self.progress = 0
-                    local delta = math.min(self.harvestYield, self.closestTarget.stone)
-                    self.closestTarget.stone = self.closestTarget.stone - delta
+                    local delta = math.min(self.harvestYield, self.targets[1].stone)
+                    self.targets[1].stone = self.targets[1].stone - delta
                     STONE = STONE + delta
                     updateStorage()
 
-                    if self.closestTarget.stone == 0 then
-                        self.closestTarget.health = 0
+                    if self.targets[1].stone == 0 then
+                        self.targets[1].health = 0
                     end
                 end
             else

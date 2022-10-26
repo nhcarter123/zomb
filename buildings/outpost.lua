@@ -12,14 +12,14 @@ return {
         building.gun = createBow()
         building.scale = 0.5
         building.height = 2
-        building.range = 8
-        building.cost = {{ "Wood", 12 }}
+        building.range = 5
+        building.cost = {{ "Wood", 20 }}
         building.shape = {
             {1},
         }
 
         building.getAOE = function(self)
-            local tiles, targets = getGridCircle(self.gridX, self.gridY, self.range)
+            local tiles, targets = getGridCircle(self.gridX, self.gridY, self.range, nil, 0, 0)
             self.aoe = tiles
         end
 
@@ -73,7 +73,7 @@ return {
                     local dist = dist(self.x, self.y, self.target.x, self.target.y)
                     local dir = angle(self.x, self.y, self.target.x, self.target.y)
 
-                    if dist > self.gun.maxRange then
+                    if dist > self.range * GRID_SIZE then
                         self:getNextState('Target gone')
                     else
                         self.gun:pullTrigger(dt, self.x, self.y, dir, dist, self.target)

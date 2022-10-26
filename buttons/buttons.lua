@@ -108,6 +108,18 @@ return {
         return button
     end,
 
+    createMillButton = function()
+        local mill = Mill.create(0, 0)
+        local button = createButton(mill)
+
+        button.baseScale = 0.25
+        button.click = function(self)
+            SELECTED = Selected.create(Mill.create, mill.cost)
+        end
+
+        return button
+    end,
+
     createForbidButton = function()
         local button = createButton({
             image = REMOVE_ICON_IMAGE

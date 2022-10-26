@@ -40,7 +40,7 @@ return {
     spawn = function(self)
         local mod = 1 + math.random() / 4
         local strength = (self:calculateBuildingWealth() + self:calculateResourceWealth()) / 1000 + POPULATION + TimeManager.day * 30
-        local enemyPoints = round(20 + strength / 4)
+        local enemyPoints = round(10 + strength / 4)
         local groupCount = math.ceil(math.random() * 8)
         local zombieValue = 4
         local ogreValue = 16

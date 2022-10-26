@@ -9,7 +9,7 @@ return {
         unit.health = 800
         unit.maxHealth = 800
         unit.size = 3
-        unit.damage = 20
+        unit.damage = 16
 
         return unit
     end

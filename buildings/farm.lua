@@ -10,6 +10,7 @@ return {
         building.completeAmount = 1
         building.harvestYield = 1
         building.needsWorker = true
+        building.isFarm = true
 
         building.scale = 0.5
         building.height = 0
@@ -21,11 +22,15 @@ return {
 
         building.getStats = function(self)
             return {
-                "Growth rate: "..tostring(self.updateRate).." / hour",
+                "Growth rate: "..tostring(self:getUpdateRate()).." / hour",
                 "Growth: "..tostring(roundDecimal(self.progress, 2)),
                 "Maturity Growth: "..tostring(self.completeAmount),
                 "Food per harvest: "..tostring(self.harvestYield)
             }
+        end
+
+        building.getUpdateRate = function(self)
+            return self.updateRate * (1 + #self.affectedBy)
         end
 
         local parentUpdate = building.update
@@ -35,7 +40,7 @@ return {
             end
 
             if self.hasWorker and not self.forbid and FOOD_SPACE_AVAILABLE then
-                self.progress = self.progress + self.updateRate * dt
+                self.progress = self.progress + self:getUpdateRate() * dt
                 self.pct = self.progress / self.completeAmount
 
                 if self.pct >= 1 then

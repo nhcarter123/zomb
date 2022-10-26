@@ -80,10 +80,14 @@ local TimeManager = {
 
         self:setShadowLength()
 
-        if self.maxTimeScale < 5 and #enemyUnits == 0 then
+        if #enemyUnits == 0 then
             self.maxTimeScale = 5
         else
             self.maxTimeScale = 2
+        end
+
+        if self.timeScale > self.maxTimeScale then
+            self.timeScale = self.maxTimeScale
         end
 
         return dt

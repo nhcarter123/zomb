@@ -4,6 +4,12 @@ isTree = function(tile)
     end
 end
 
+isStorage = function(tile)
+    if tile.building then
+        return tile.building.isStorage
+    end
+end
+
 return {
     create = function(gridX, gridY)
         local building = Building.create(gridX, gridY, 0, 0, WOOD_CUTTER_HUT_IMAGE)
@@ -28,16 +34,21 @@ return {
                 "Food cost: "..tostring(self.foodCost).." / harvest",
             }
 
-            if self.closestTarget then
-                table.insert(stats, "Current Tree Remaining wood: "..tostring(self.closestTarget.wood))
+            if self.targets[1] then
+                table.insert(stats, "Current Tree Remaining wood: "..tostring(self.targets[1].wood))
             end
 
             return stats
         end
 
         building.getAOE = function(self)
-            local tiles, targets = getGridCircle(self.gridX, self.gridY, 5, isTree)
-            self.closestTarget = getClosest(self.gridX * GRID_SIZE, self.gridY * GRID_SIZE, targets)
+            local tiles, targets = getGridCircle(self.gridX, self.gridY, 5, isTree, 0, 0)
+            local closest = getClosest(self.gridX * GRID_SIZE, self.gridY * GRID_SIZE, targets)
+            if closest then
+                self.targets = { closest }
+            else
+                self.targets = {}
+            end
             self.aoe = tiles
         end
 
@@ -56,7 +67,7 @@ return {
                 return true
             end
 
-            if self.closestTarget and self.hasWorker and not self.forbid and WOOD_SPACE_AVAILABLE then
+            if self.targets[1] and self.hasWorker and not self.forbid and WOOD_SPACE_AVAILABLE then
                 if not self.paid then
                     if FOOD > 0 then
                         FOOD = FOOD - self.foodCost
@@ -66,7 +77,7 @@ return {
                         self.pct = nil
                     end
                 else
-                    if self.closestTarget.wood <= 0 then
+                    if self.targets[1].wood <= 0 then
                         self:getAOE()
                         self.progress = 0
                     end
@@ -77,14 +88,14 @@ return {
                     if self.pct >= 1 then
                         self.progress = 0
                         self.paid = false
-                        local deltaWood = math.min(self.harvestYield, self.closestTarget.wood)
-                        self.closestTarget.wood = self.closestTarget.wood - deltaWood
+                        local deltaWood = math.min(self.harvestYield, self.targets[1].wood)
+                        self.targets[1].wood = self.targets[1].wood - deltaWood
                         WOOD = WOOD + deltaWood
 
                         updateStorage()
 
-                        if self.closestTarget.wood == 0 then
-                            self.closestTarget.health = 0
+                        if self.targets[1].wood == 0 then
+                            self.targets[1].health = 0
                         end
                     end
                 end

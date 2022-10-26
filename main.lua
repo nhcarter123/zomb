@@ -32,6 +32,7 @@ StoneWall = require("buildings/stoneWall")
 Tower = require("buildings/outpost")
 CatapultTower = require("buildings/catapultTower")
 House = require("buildings/house")
+Mill = require("buildings/mill")
 WoodCutterHut = require("buildings/woodCutterHut")
 MiningCamp = require("buildings/miningCamp")
 Tree = require("buildings/tree")
@@ -190,10 +191,12 @@ function love.load()
     M1_ABRAMS_BODY_IMAGE = love.graphics.newImage("tankBody.png")
     M1_ABRAMS_TURRET_IMAGE = love.graphics.newImage("tankTurret.png")
 
+    ---- Buildings
     HOUSE_IMAGE = love.graphics.newImage("images/house.png")
     HOUSE_2_IMAGE = love.graphics.newImage("images/house2.png")
     WOOD_CUTTER_HUT_IMAGE = love.graphics.newImage("images/woodCutterHut.png")
     MINING_CAMP_IMAGE = love.graphics.newImage("images/miningTent.png")
+    MILL_IMAGE = love.graphics.newImage("images/mill.png")
 
     STORAGE_FLOOR_IMAGE = love.graphics.newImage("images/storageFloor.png")
     STORAGE_ROOF_IMAGE = love.graphics.newImage("images/storageRoof.png")
@@ -212,6 +215,7 @@ function love.load()
     TOWER_IMAGE = love.graphics.newImage("images/tower.png")
     FARM_IMAGE = love.graphics.newImage("images/farm.png")
     GRASS_IMAGE = love.graphics.newImage("images/grass.png")
+    MOUNTAIN_IMAGE = love.graphics.newImage("images/mountain.png")
 
     ---- Icons
     REMOVE_ICON_IMAGE = love.graphics.newImage("images/icons/remove.png")
@@ -261,6 +265,7 @@ function love.load()
         }),
         createTab("Production", {
             Buttons.createFarmButton(),
+            Buttons.createMillButton(),
             Buttons.createWoodCutterHutButton(),
             Buttons.createMiningCampButton(),
             Buttons.createStorageButton(),
@@ -273,14 +278,13 @@ function love.load()
         }),
     }
 
-    tileSize = GRASS_TILE_SIZE
     local grassTileCount = math.floor(TOTAL_TILES / (GRASS_SCALE * (GRASS_TILE_SIZE / GRID_SIZE))) + 1 + GRASS_PADDING_TILES * 2
-    GRASS_CANVAS = love.graphics.newCanvas(grassTileCount * tileSize, grassTileCount * tileSize)
+    GRASS_CANVAS = love.graphics.newCanvas(grassTileCount * GRASS_TILE_SIZE, grassTileCount * GRASS_TILE_SIZE)
     love.graphics.setCanvas(GRASS_CANVAS)
 
     for i = 0, grassTileCount do
         for j = 0, grassTileCount do
-            love.graphics.draw(GRASS_IMAGE, i * tileSize, j * tileSize)
+            love.graphics.draw(GRASS_IMAGE, i * GRASS_TILE_SIZE, j * GRASS_TILE_SIZE)
         end
     end
 
@@ -306,7 +310,9 @@ function love.load()
             local noise2 = love.math.noise(noiseX / noiseScale2, noiseY / noiseScale2)
             local noise6 = love.math.noise(noiseX / noiseScale6, noiseY / noiseScale6)
             local noise12 = love.math.noise(noiseX / noiseScale12, noiseY / noiseScale12)
+            local noise12Offset = love.math.noise(10000 + noiseX / noiseScale12, 10000 + noiseY / noiseScale12)
 
+            local mountainNoise = noise12Offset * startingFactor
             local rockNoise = noise6 * startingFactor
             local treeNoise = math.sqrt(math.sqrt(math.sqrt(noise1 * noise2 * noise12 * (1 - rockNoise)))) * startingFactor
 
@@ -329,15 +335,24 @@ function love.load()
                 }
             }
 
+            local isMountain
+
+            if mountainNoise > 1 then
+                isMountain = true
+                love.graphics.setCanvas(GRASS_CANVAS)
+                love.graphics.draw(MOUNTAIN_IMAGE, (i + GRID_TILES) * GRID_SIZE, (j + GRID_TILES) * GRID_SIZE)
+            end
+
+            love.graphics.setCanvas(gridcanvas)
             love.graphics.rectangle("line", (i + GRID_TILES) * tileSize, (j + GRID_TILES) * tileSize, tileSize, tileSize)
 
-            if treeNoise > 0.82 then
+            if treeNoise > 0.82 and not isMountain then
                 local building = Tree.create(i, j)
                 table.insert(buildings, building)
                 building:init()
             end
 
-            if rockNoise > 0.95 then
+            if rockNoise > 0.95 and not isMountain then
                 local building = Rock.create(i, j)
                 table.insert(buildings, building)
                 building:init()
@@ -1281,19 +1296,25 @@ local function drawCameraStuff(l,t,w,h)
         love.graphics.setColor(1, 1, 1, 1)
     end
 
+    for i = #buildings, 1, -1 do
+        buildings[i]:draw(true)
+    end
+
+    for i = 1, #enemyUnits, 1 do
+        enemyUnits[i]:draw()
+    end
+
     love.graphics.setShader(DropShadowShader)
     for i = #buildings, 1, -1 do
         buildings[i]:drawShadow()
     end
     love.graphics.setShader()
 
+    -- Todo separate floor and roof buildings somehow?
     for i = #buildings, 1, -1 do
-        buildings[i]:draw()
+        buildings[i]:draw(false)
     end
 
-    for i = 1, #enemyUnits, 1 do
-        enemyUnits[i]:draw()
-    end
 --    love.graphics.draw(SPRITE_BATCH)
 
     for i = 1,#bullets,1 do

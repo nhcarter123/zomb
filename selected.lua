@@ -34,23 +34,23 @@ return {
             update = function(self)
                 local mx, my = love.mouse.getPosition()
                 local worldMx, worldMy = cam:toWorld(mx, my)
-                local gridX = toGridSpace(worldMx)
-                local gridY = toGridSpace(worldMy)
+                local gridX = toGridSpace(worldMx + GRID_SIZE * self.obj.offsetX)
+                local gridY = toGridSpace(worldMy + GRID_SIZE * self.obj.offsetY)
 
                 if gridX ~= self.gridX or gridY ~= self.gridY or not self.visible then
                     self.visible = true
-                    self.canPlace = not doesOverlap(gridX, gridY, self.obj.shape) and self:canAfford()
+                    self.canPlace = not doesOverlap(gridX - self.obj.offsetX * 2, gridY - self.obj.offsetY * 2, self.obj.shape) and self:canAfford()
 
                     if self.canPlace then
-                        self.obj.x = (gridX + self.obj.offsetX) * GRID_SIZE
-                        self.obj.y = (gridY + self.obj.offsetY) * GRID_SIZE
+                        self.obj.x = (gridX - self.obj.offsetX) * GRID_SIZE
+                        self.obj.y = (gridY - self.obj.offsetY) * GRID_SIZE
                     else
-                        self.obj.x = worldMx + self.obj.offsetX * GRID_SIZE
-                        self.obj.y = worldMy + self.obj.offsetY * GRID_SIZE
+                        self.obj.x = worldMx
+                        self.obj.y = worldMy
                     end
 
-                    self.obj.gridX = gridX
-                    self.obj.gridY = gridY
+                    self.obj.gridX = gridX - self.obj.offsetX * 2
+                    self.obj.gridY = gridY - self.obj.offsetY * 2
                     if self.obj.getAOE then
                         self.obj:getAOE()
                     end
