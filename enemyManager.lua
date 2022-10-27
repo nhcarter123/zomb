@@ -14,7 +14,7 @@ end
 
 return {
     spawnCount = 0,
-    spawnDuration = 120000,
+    spawnDuration = 15000000000,
     enemiesToSpawn = {},
 
     update = function(self, dt)
@@ -22,7 +22,7 @@ return {
 
         if self.spawnCount > self.spawnDuration then
             self.spawnCount = 0
-            self:spawn()
+            self:spawn(0.01)
         end
 
         for i = #self.enemiesToSpawn, 1, -1 do
@@ -37,10 +37,20 @@ return {
         end
     end,
 
-    spawn = function(self)
+    spawn = function(self, mod)
         local mod = 1 + math.random() / 4
-        local strength = (self:calculateBuildingWealth() + self:calculateResourceWealth()) / 1000 + POPULATION + TimeManager.day * 30
-        local enemyPoints = round(10 + strength / 4)
+        local buildingScore = self:calculateBuildingWealth() / 50
+        local resourceScore = self:calculateResourceWealth()/ 50
+        local popScore = POPULATION
+        local dayScore = math.pow(2 * (TimeManager.day * 24 + TimeManager.time), 1.05)
+        local strength = buildingScore + resourceScore + popScore + dayScore
+
+        love.window.showMessageBox("test", tostring(buildingScore))
+        love.window.showMessageBox("test", tostring(resourceScore))
+        love.window.showMessageBox("test", tostring(popScore))
+        love.window.showMessageBox("test", tostring(dayScore))
+
+        local enemyPoints = round(mod * (strength / 4))
         local groupCount = math.ceil(math.random() * 8)
         local zombieValue = 4
         local ogreValue = 16

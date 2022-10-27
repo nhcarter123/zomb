@@ -1,120 +1,144 @@
 return {
     createWoodWallButton = function()
-        local wall = WoodWall.create(0, 0)
-        local button = createButton(wall)
+        local obj = WoodWall.create(0, 0)
+        local button = createButton(obj)
 
         button.click = function(self)
-            SELECTED = Selected.create(WoodWall.create, wall.cost)
+            SELECTED = Selected.create(WoodWall.create, obj.cost)
         end
 
         return button
     end,
 
     createStoneWallButton = function()
-        local wall = StoneWall.create(0, 0)
-        local button = createButton(wall)
+        local obj = StoneWall.create(0, 0)
+        local button = createButton(obj)
 
         button.click = function(self)
-            SELECTED = Selected.create(StoneWall.create, wall.cost)
+            SELECTED = Selected.create(StoneWall.create, obj.cost)
         end
 
         return button
     end,
 
     createOutpostButton = function()
-        local tower = Tower.create(0, 0)
-        local button = createButton(tower)
+        local obj = Tower.create(0, 0)
+        local button = createButton(obj)
 
         button.baseScale = 0.5
 
         button.click = function(self)
-            SELECTED = Selected.create(Tower.create, tower.cost)
+            SELECTED = Selected.create(Tower.create, obj.cost)
         end
 
         return button
     end,
 
     createCatapultTowerButton = function()
-        local tower = CatapultTower.create(0, 0)
-        local button = createButton(tower)
+        local obj = CatapultTower.create(0, 0)
+        local button = createButton(obj)
 
         button.baseScale = 0.5
 
         button.click = function(self)
-            SELECTED = Selected.create(CatapultTower.create, tower.cost)
+            SELECTED = Selected.create(CatapultTower.create, obj.cost)
         end
 
         return button
     end,
 
     createFarmButton = function()
-        local farm = Farm.create(0, 0)
-        local button = createButton(farm)
+        local obj = Farm.create(0, 0)
+        local button = createButton(obj)
 
         button.baseScale = 0.25
         button.click = function(self)
-            SELECTED = Selected.create(Farm.create, farm.cost)
+            SELECTED = Selected.create(Farm.create, obj.cost)
         end
 
         return button
     end,
 
     createStorageButton = function()
-        local storage = Storage.create(0, 0)
-        local button = createButton(storage)
+        local obj = Storage.create(0, 0)
+        local button = createButton(obj)
 
         button.baseScale = 0.25
 
         button.click = function(self)
-            SELECTED = Selected.create(Storage.create, storage.cost)
+            SELECTED = Selected.create(Storage.create, obj.cost)
         end
 
         return button
     end,
 
     createHouseButton = function()
-        local house = House.create(0, 0)
-        local button = createButton(house)
+        local obj = House.create(0, 0)
+        local button = createButton(obj)
 
         button.baseScale = 0.25
         button.click = function(self)
-            SELECTED = Selected.create(House.create, house.cost)
+            SELECTED = Selected.create(House.create, obj.cost)
+        end
+
+        return button
+    end,
+
+    createStoneHouseButton = function()
+        local obj = StoneHouse.create(0, 0)
+        local button = createButton(obj)
+
+        button.baseScale = 0.25 * (2 / 3)
+        button.click = function(self)
+            SELECTED = Selected.create(StoneHouse.create, obj.cost)
         end
 
         return button
     end,
 
     createWoodCutterHutButton = function()
-        local woodCutterHut = WoodCutterHut.create(0, 0)
-        local button = createButton(woodCutterHut)
+        local obj = WoodCutterHut.create(0, 0)
+        local button = createButton(obj)
 
         button.baseScale = 0.5
         button.click = function(self)
-            SELECTED = Selected.create(WoodCutterHut.create, woodCutterHut.cost)
+            SELECTED = Selected.create(WoodCutterHut.create, obj.cost)
         end
 
         return button
     end,
 
     createMiningCampButton = function()
-        local miningCamp = MiningCamp.create(0, 0)
-        local button = createButton(miningCamp)
+        local obj = MiningCamp.create(0, 0)
+        local button = createButton(obj)
 
         button.baseScale = 0.5
         button.click = function(self)
-            SELECTED = Selected.create(MiningCamp.create, miningCamp.cost)
+            SELECTED = Selected.create(MiningCamp.create, obj.cost)
         end
 
         return button
     end,
 
     createMillButton = function()
-        local mill = Mill.create(0, 0)
-        local button = createButton(mill)
+        local obj = Mill.create(0, 0)
+        local button = createButton(obj)
 
         button.baseScale = 0.25
         button.click = function(self)
-            SELECTED = Selected.create(Mill.create, mill.cost)
+            SELECTED = Selected.create(Mill.create, obj.cost)
+        end
+
+        return button
+    end,
+
+    createSawmillButton = function()
+        local obj = Sawmill.create(0, 0)
+        local button = createButton(obj)
+
+        button.baseScale = 0.25
+        button.click = function(self)
+            SELECTED = Selected.create(Sawmill.create, obj.cost)
         end
 
         return button

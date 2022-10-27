@@ -32,7 +32,9 @@ StoneWall = require("buildings/stoneWall")
 Tower = require("buildings/outpost")
 CatapultTower = require("buildings/catapultTower")
 House = require("buildings/house")
+StoneHouse = require("buildings/stoneHouse")
 Mill = require("buildings/mill")
+Sawmill = require("buildings/sawmill")
 WoodCutterHut = require("buildings/woodCutterHut")
 MiningCamp = require("buildings/miningCamp")
 Tree = require("buildings/tree")
@@ -84,7 +86,7 @@ GRID_SCALE = 2
 GRASS_SCALE = 1
 GRASS_TILE_SIZE = 256
 GRASS_PADDING_TILES = 0
-GRID_TILES = 30
+GRID_TILES = 60
 TOTAL_TILES = 2 * GRID_TILES + 1
 
 updateFieldCount = 0
@@ -104,7 +106,7 @@ cam = Gamera.new(-worldWidth / 2, -worldHeight / 2, worldWidth, worldHeight)
 SHADOW_SIZE = 5000
 
 SEARCH_NODES = {}
-MAX_SEARCHES = 2000
+MAX_OPERATIONS = 1600
 
 MAX_POPULATION = 0
 MAX_HAPPINESS = 100
@@ -197,6 +199,8 @@ function love.load()
     WOOD_CUTTER_HUT_IMAGE = love.graphics.newImage("images/woodCutterHut.png")
     MINING_CAMP_IMAGE = love.graphics.newImage("images/miningTent.png")
     MILL_IMAGE = love.graphics.newImage("images/mill.png")
+    SAWMILL_IMAGE = love.graphics.newImage("images/sawmill.png")
+    STONE_HOUSE = love.graphics.newImage("images/stoneHouse2.png")
 
     STORAGE_FLOOR_IMAGE = love.graphics.newImage("images/storageFloor.png")
     STORAGE_ROOF_IMAGE = love.graphics.newImage("images/storageRoof.png")
@@ -216,6 +220,7 @@ function love.load()
     FARM_IMAGE = love.graphics.newImage("images/farm.png")
     GRASS_IMAGE = love.graphics.newImage("images/grass.png")
     MOUNTAIN_IMAGE = love.graphics.newImage("images/mountain.png")
+    ROCK_IMAGE = love.graphics.newImage("images/rockTex.png")
 
     ---- Icons
     REMOVE_ICON_IMAGE = love.graphics.newImage("images/icons/remove.png")
@@ -262,11 +267,13 @@ function love.load()
     TABS = {
         createTab("Residential", {
             Buttons.createHouseButton(),
+            Buttons.createStoneHouseButton(),
         }),
         createTab("Production", {
             Buttons.createFarmButton(),
             Buttons.createMillButton(),
             Buttons.createWoodCutterHutButton(),
+            Buttons.createSawmillButton(),
             Buttons.createMiningCampButton(),
             Buttons.createStorageButton(),
         }),
@@ -295,7 +302,7 @@ function love.load()
 
     local baseNoiseScale = 2
     local noiseScale1 = 1 * baseNoiseScale
-    local noiseScale2 = 2 * baseNoiseScale
+    local noiseScale3 = 3 * baseNoiseScale
     local noiseScale6 = 6 * baseNoiseScale
     local noiseScale12 = 12 * baseNoiseScale
     local noiseOffsetX = math.random() * 10000
@@ -307,14 +314,14 @@ function love.load()
             local noiseY = j + noiseOffsetY
             local startingFactor = clamp(0, 0.01 * math.pow(dist(0, 0, i, j), 2), 1)
             local noise1 = love.math.noise(noiseX / noiseScale1, noiseY / noiseScale1)
-            local noise2 = love.math.noise(noiseX / noiseScale2, noiseY / noiseScale2)
+            local noise3 = love.math.noise(noiseX / noiseScale3, noiseY / noiseScale3)
             local noise6 = love.math.noise(noiseX / noiseScale6, noiseY / noiseScale6)
             local noise12 = love.math.noise(noiseX / noiseScale12, noiseY / noiseScale12)
             local noise12Offset = love.math.noise(10000 + noiseX / noiseScale12, 10000 + noiseY / noiseScale12)
 
             local mountainNoise = noise12Offset * startingFactor
             local rockNoise = noise6 * startingFactor
-            local treeNoise = math.sqrt(math.sqrt(math.sqrt(noise1 * noise2 * noise12 * (1 - rockNoise)))) * startingFactor
+            local treeNoise = math.sqrt(noise3 * noise12) * startingFactor
 
             if
                 i == -GRID_TILES or i == GRID_TILES or
@@ -336,23 +343,27 @@ function love.load()
             }
 
             local isMountain
+            local isTree
 
-            if mountainNoise > 1 then
+            if mountainNoise > 0.6 then
                 isMountain = true
-                love.graphics.setCanvas(GRASS_CANVAS)
-                love.graphics.draw(MOUNTAIN_IMAGE, (i + GRID_TILES) * GRID_SIZE, (j + GRID_TILES) * GRID_SIZE)
+--                love.graphics.setCanvas(GRASS_CANVAS)
+----                love.graphics.setColor(0.3, 0.3, 0.3)
+--                love.graphics.draw(ROCK_IMAGE, (i + GRID_TILES) * GRID_SIZE, (j + GRID_TILES) * GRID_SIZE, 0, 0.5, 0.5)
+----                love.graphics.setColor(1, 1, 1)
             end
 
             love.graphics.setCanvas(gridcanvas)
             love.graphics.rectangle("line", (i + GRID_TILES) * tileSize, (j + GRID_TILES) * tileSize, tileSize, tileSize)
 
-            if treeNoise > 0.82 and not isMountain then
+            if treeNoise > 0.8 and not isMountain then
+                isTree = true
                 local building = Tree.create(i, j)
                 table.insert(buildings, building)
                 building:init()
             end
 
-            if rockNoise > 0.95 and not isMountain then
+            if rockNoise > 0.93 and not isMountain and not isTree then
                 local building = Rock.create(i, j)
                 table.insert(buildings, building)
                 building:init()
@@ -527,107 +538,108 @@ function getNeighbors(node)
     return neighbors
 end
 
-function resetFields()
-    for i = -GRID_TILES, GRID_TILES do
-        for j = -GRID_TILES, GRID_TILES do
-            grid[i][j].weight = 999
-            grid[i][j].tight = false
-        end
-    end
-end
+function calculateFlow(operations)
+    if FLOW_DIRTY then
+        for i = SAVED_GRID_I, GRID_TILES do
+            if operations > MAX_OPERATIONS then
+                SAVED_GRID_I = i - 1
+                return
+            end
 
-function calculateFlow()
-    for i = -GRID_TILES, GRID_TILES do
-        for j = -GRID_TILES, GRID_TILES do
---            local lowest = 999
---            local bestX = 0
---            local bestY = 0
---
---            for k = -1, 1 do
---                for l = -1, 1 do
---                    if not (k == 0 and l == 0) then
---                        local x = i + k
---                        local y = j + l
---                        if x >= -GRID_TILES and x <= GRID_TILES and y >= -GRID_TILES and y <= GRID_TILES then
---                            if
---                                not (k == 1 and l == 1 and grid[i + 1][j].building and grid[i][j + 1].building) and
---                                not (k == -1 and l == 1 and grid[i - 1][j].building and grid[i][j + 1].building) and
---                                not (k == -1 and l == -1 and grid[i - 1][j].building and grid[i][j - 1].building) and
---                                not (k == 1 and l == -1 and grid[i + 1][j].building and grid[i][j - 1].building)
---                            then
---                                local weight = grid[x][y].weight
---                                if weight < lowest then
---                                    lowest = weight
---                                    bestX = k
---                                    bestY = l
---                                end
---                            end
---                        end
---                    end
---                end
---            end
-            local lowest = 999
-            local secondLowest = 999
-            local thirdLowest = 999
-            local bestX = 0
-            local bestY = 0
-            local secondBestX = 0
-            local secondBestY = 0
-            local currentWeight = grid[i][j].weight
+            for j = -GRID_TILES, GRID_TILES do
+                operations = operations + 4
+    --            local lowest = 999
+    --            local bestX = 0
+    --            local bestY = 0
+    --
+    --            for k = -1, 1 do
+    --                for l = -1, 1 do
+    --                    if not (k == 0 and l == 0) then
+    --                        local x = i + k
+    --                        local y = j + l
+    --                        if x >= -GRID_TILES and x <= GRID_TILES and y >= -GRID_TILES and y <= GRID_TILES then
+    --                            if
+    --                                not (k == 1 and l == 1 and grid[i + 1][j].building and grid[i][j + 1].building) and
+    --                                not (k == -1 and l == 1 and grid[i - 1][j].building and grid[i][j + 1].building) and
+    --                                not (k == -1 and l == -1 and grid[i - 1][j].building and grid[i][j - 1].building) and
+    --                                not (k == 1 and l == -1 and grid[i + 1][j].building and grid[i][j - 1].building)
+    --                            then
+    --                                local weight = grid[x][y].weight
+    --                                if weight < lowest then
+    --                                    lowest = weight
+    --                                    bestX = k
+    --                                    bestY = l
+    --                                end
+    --                            end
+    --                        end
+    --                    end
+    --                end
+    --            end
+                local lowest = 999
+                local secondLowest = 999
+                local thirdLowest = 999
+                local bestX = 0
+                local bestY = 0
+                local secondBestX = 0
+                local secondBestY = 0
+                local currentWeight = grid[i][j].weight
 
-            local options = {}
+                local options = {}
 
-            for k = -1, 1 do
-                for l = -1, 1 do
-                    if not (k == 0 and l == 0) then
-                        local x = i + k
-                        local y = j + l
+                for k = -1, 1 do
+                    for l = -1, 1 do
+                        if not (k == 0 and l == 0) then
+                            local x = i + k
+                            local y = j + l
 
-                        if x >= -GRID_TILES and x <= GRID_TILES and y >= -GRID_TILES and y <= GRID_TILES then
-                            if grid[x][y].building then
-                                grid[i][j].tight = true
-                            end
-                            if
-                                not (k == 1 and l == 1 and grid[i + 1][j].building and grid[i][j + 1].building) and
-                                not (k == -1 and l == 1 and grid[i - 1][j].building and grid[i][j + 1].building) and
-                                not (k == -1 and l == -1 and grid[i - 1][j].building and grid[i][j - 1].building) and
-                                not (k == 1 and l == -1 and grid[i + 1][j].building and grid[i][j - 1].building)
-                            then
---                                local dirToTarget = toDeg(angle(i, j, x, y))
---                                local dirToOrigin = toDeg(angle(i, j, 0, 0))
---                                local improvement = grid[x][y].weight
-                                local weight = grid[x][y].weight + dist(i, j, x, y) / 10
---                                local weight = grid[x][y].weight + grid[x][j].units / 2
---                                local weight = grid[x][y].weight + math.abs(angleDiff(dirToTarget, dirToOrigin)) / 1000
---                                local weight = grid[x][y].weight + math.abs(angleDiff(dirToTarget, dirToOrigin)) / 1000
---                                local weight = grid[x][y].weight + dist(x, y, 0, 0) / 100
-    --                            love.window.showMessageBox("test", tostring(math.abs(angleDiff(dirToTarget, dirToOrigin))))
-                                table.insert(options, {
-                                    weight = weight,
-                                    x = k,
-                                    y = l
-                                })
+                            if x >= -GRID_TILES and x <= GRID_TILES and y >= -GRID_TILES and y <= GRID_TILES then
+                                if grid[x][y].building then
+                                    grid[i][j].tight = true
+                                end
+                                if
+                                    not (k == 1 and l == 1 and grid[i + 1][j].building and grid[i][j + 1].building) and
+                                    not (k == -1 and l == 1 and grid[i - 1][j].building and grid[i][j + 1].building) and
+                                    not (k == -1 and l == -1 and grid[i - 1][j].building and grid[i][j - 1].building) and
+                                    not (k == 1 and l == -1 and grid[i + 1][j].building and grid[i][j - 1].building)
+                                then
+    --                                local dirToTarget = toDeg(angle(i, j, x, y))
+    --                                local dirToOrigin = toDeg(angle(i, j, 0, 0))
+    --                                local improvement = grid[x][y].weight
+                                    local weight = grid[x][y].weight + dist(i, j, x, y) / 10
+    --                                local weight = grid[x][y].weight + grid[x][j].units / 2
+    --                                local weight = grid[x][y].weight + math.abs(angleDiff(dirToTarget, dirToOrigin)) / 1000
+    --                                local weight = grid[x][y].weight + math.abs(angleDiff(dirToTarget, dirToOrigin)) / 1000
+    --                                local weight = grid[x][y].weight + dist(x, y, 0, 0) / 100
+        --                            love.window.showMessageBox("test", tostring(math.abs(angleDiff(dirToTarget, dirToOrigin))))
+                                    table.insert(options, {
+                                        weight = weight,
+                                        x = k,
+                                        y = l
+                                    })
+                                end
                             end
                         end
                     end
                 end
+
+                table.sort(options, weightSort)
+
+                grid[i][j].x = toWorldSpace(i)
+                grid[i][j].y = toWorldSpace(j)
+
+                local flow = {}
+                for k = 1, #options do
+                    table.insert(flow, {
+                        dir = angle(0, 0 , options[k].x, options[k].y),
+                        nextTile = grid[i + options[k].x][j + options[k].y],
+                    })
+                end
+
+                grid[i][j].flow = flow
             end
-
-            table.sort(options, weightSort)
-
-            grid[i][j].x = toWorldSpace(i)
-            grid[i][j].y = toWorldSpace(j)
-
-            local flow = {}
-            for k = 1, #options do
-                table.insert(flow, {
-                    dir = angle(0, 0 , options[k].x, options[k].y),
-                    nextTile = grid[i + options[k].x][j + options[k].y],
-                })
-            end
-
-            grid[i][j].flow = flow
         end
+
+        FLOW_DIRTY = false
     end
 end
 
@@ -664,28 +676,45 @@ function calculateIntegrationField()
         end
     end
 
-    resetFields()
-
---    table.sort(options, weightSort)
-
-    for i = 1, #SEARCH_NODES, 1 do
-        local node = SEARCH_NODES[i]
-        grid[node.x][node.y].weight = 0
-    end
+    SAVED_GRID_I = -GRID_TILES
+    FIELD_DIRTY = true
 end
 
 function processField()
-    local searches = 0
+    local operations = 0
+    if FIELD_DIRTY then
+        for i = SAVED_GRID_I, GRID_TILES do
+            if operations > MAX_OPERATIONS then
+                SAVED_GRID_I = i - 1
+                return
+            end
+
+            for j = -GRID_TILES, GRID_TILES do
+                operations = operations + 1
+
+                grid[i][j].weight = 999
+                grid[i][j].tight = false
+            end
+        end
+
+        for i = 1, #SEARCH_NODES, 1 do
+            local node = SEARCH_NODES[i]
+            grid[node.x][node.y].weight = 0
+        end
+
+        FIELD_DIRTY = false
+    end
+
     local someSearchNodes = #SEARCH_NODES > 0
 
-    while #SEARCH_NODES > 0 and searches < MAX_SEARCHES  do
+    while #SEARCH_NODES > 0 and operations <= MAX_OPERATIONS  do
         local currentNode = SEARCH_NODES[1]
         table.remove(SEARCH_NODES, 1)
 
         local weight = grid[currentNode.x][currentNode.y].weight
         local neighbors = getNeighbors(currentNode)
 
-        searches = searches + 1
+        operations = operations + 1
 
         for i = 1, #neighbors do
             local neighbor = neighbors[i]
@@ -705,9 +734,12 @@ function processField()
 
 
         if #SEARCH_NODES == 0 then
-            calculateFlow()
+            FLOW_DIRTY = true
+            SAVED_GRID_I = -GRID_TILES
         end
     end
+
+    calculateFlow(operations)
 end
 
 function love.wheelmoved(x, y)
@@ -720,7 +752,7 @@ function love.wheelmoved(x, y)
             targetScale = cam:getScale() - 0.3 * cam:getScale()
         end
 
-        targetScale = clamp(0.7, targetScale, 3)
+        targetScale = clamp(0.5, targetScale, 3)
 
         local mx, my = love.mouse.getPosition()
         local xDiff = love.graphics.getWidth() / 2 - mx
@@ -816,7 +848,7 @@ function love.keypressed(key, scancode, isrepeat)
     end
 
     if key == "f5" then
-        EnemyManager:spawn()
+        EnemyManager:spawn(1)
     end
 end
 
@@ -937,12 +969,12 @@ function love.update(dt)
 --        targetCamY = currentY - (yDiff * PAN_SPEED * dt) / cam:getScale()
 --    end
 --
-    if updateFieldCount > UPDATE_FIELD_DURATION then
-        updateFieldCount = 0
-        calculateIntegrationField()
-    else
-        updateFieldCount = updateFieldCount + 1 * dt
-    end
+--    if updateFieldCount > UPDATE_FIELD_DURATION then
+--        updateFieldCount = 0
+--        calculateIntegrationField()
+--    else
+--        updateFieldCount = updateFieldCount + 1 * dt
+--    end
 
     local mouseDown = love.mouse.isDown(1)
     local aIsDown = love.keyboard.isDown("a")
@@ -1348,14 +1380,15 @@ local function drawCameraStuff(l,t,w,h)
             for j = -GRID_TILES, GRID_TILES, 1 do
 --                local value = grid[i][j].weight
 --                love.graphics.print(tostring(roundDecimal(value, 2)), i * GRID_SIZE, j * GRID_SIZE)
-    --            local value = grid[i][j].building
-    --            love.graphics.print(tostring(value), i * GRID_SIZE, j * GRID_SIZE)
+--                local value = grid[i][j].weight
+--                love.graphics.print(tostring(value), i * GRID_SIZE, j * GRID_SIZE)
 
     --            local value = grid[i][j].noise
     --            love.graphics.setColor(value, value, value, 0.2)
     --            love.graphics.rectangle('fill',i * GRID_SIZE, j * GRID_SIZE, 64, 64)
 
                 local flow = grid[i][j].flow
+
                 if flow[1].x == 0 and flow[1].y == 0 then
                     love.graphics.circle("fill", i * GRID_SIZE, j * GRID_SIZE, 2, 8)
                 else

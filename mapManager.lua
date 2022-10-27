@@ -252,7 +252,7 @@ return {
                     nextNode.visited = true
 
                     if nextNode.type == "Enemy" then
-                        EnemyManager:spawn()
+                        EnemyManager:spawn(1)
                     end
 
                     if #nextNode.nextNodes > 1 then

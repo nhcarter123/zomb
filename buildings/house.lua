@@ -2,8 +2,8 @@ return {
     create = function(gridX, gridY)
         local building = Building.create(gridX, gridY, 0, 0.5, HOUSE_2_IMAGE)
 
-        building.title = "House"
-        building.description = "A simple home"
+        building.title = "Wood house"
+        building.description = "A simple wooden home"
         building.scale = 0.5
         building.residentCount = 4
         --        building.progress = 0

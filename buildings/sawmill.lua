@@ -1,26 +1,25 @@
-isFarm = function(tile)
+isWoodCutterHut = function(tile)
     if tile.building then
-        return tile.building.isFarm
+        return tile.building.isWoodCutterHut
     end
 end
 
 return {
     create = function(gridX, gridY)
-        local building = Building.create(gridX, gridY, 0.5, 0.5, MILL_IMAGE)
+        local building = Building.create(gridX, gridY, 0.5, 0, SAWMILL_IMAGE)
 
-        building.title = "Mill"
-        building.description = "Increases production of nearby farms"
+        building.title = "Sawmill"
+        building.description = "Increases production of nearby wood cutter huts"
         building.scale = 0.5
 
         building.isTotem = true
-        building.cost = {{ "Wood", 10 }, { "Stone", 10 }}
+        building.cost = {{ "Wood", 10 }, { "Stone", 5 }}
         building.shape = {
             {1, 1},
-            {1, 1}
         }
 
         building.getAOE = function(self)
-            self.aoe, self.targets = getGridCircle(self.gridX, self.gridY, 3, isFarm, self.offsetX, self.offsetY)
+            self.aoe, self.targets = getGridCircle(self.gridX, self.gridY, 2, isWoodCutterHut, self.offsetX, self.offsetY)
 
             if self.initialized then
                 for i = 1, #self.targets do
@@ -50,7 +49,7 @@ return {
 
         building.getStats = function(self)
             local stats = {
-                "Affected farms: "..tostring(0),
+                "Affected wood cutter huts: "..tostring(0),
             }
 
             return stats

@@ -7,8 +7,8 @@ return {
 
         building.progress = 0
         building.updateRate = 2 * PRODUCTION_MULTIPLIER
-        building.completeAmount = 1
-        building.harvestYield = 1
+        building.completeAmount = 3
+        building.harvestYield = 3
         building.needsWorker = true
         building.isFarm = true
 

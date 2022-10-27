@@ -8,7 +8,7 @@ return {
         building.scale = 0.54
         building.health = 100
         building.maxHealth = 100
-        building.cost = {{ "Wood", 1 } }
+        building.cost = {{ "Wood", 2 } }
         building.material = "Wood"
 
         building.setImage = function(self)

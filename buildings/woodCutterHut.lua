@@ -26,11 +26,16 @@ return {
         building.completeAmount = 1
         building.harvestYield = 1
         building.needsWorker = true
+        building.isWoodCutterHut = true
         building.foodCost = 1 -- todo replace with more sophisticated solution in the future
+
+        building.getUpdateRate = function(self)
+            return self.updateRate * (1 + #self.affectedBy)
+        end
 
         building.getStats = function(self)
             local stats = {
-                "Wood production: "..tostring(self.updateRate / self.completeAmount).." / hour",
+                "Wood production: "..tostring(self:getUpdateRate() / self.completeAmount).." / hour",
                 "Food cost: "..tostring(self.foodCost).." / harvest",
             }
 
@@ -82,7 +87,7 @@ return {
                         self.progress = 0
                     end
 
-                    self.progress = self.progress + self.updateRate * dt
+                    self.progress = self.progress + self:getUpdateRate() * dt
                     self.pct = self.progress / self.completeAmount
 
                     if self.pct >= 1 then

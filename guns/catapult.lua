@@ -7,7 +7,6 @@ return {
             0.3, -- acuracy mod,
             0.7, -- velocity mod,
             0, -- min range
-            600, -- max range
             1, -- weight
             Bullets.createCatapultProjectile() -- ammo
         )

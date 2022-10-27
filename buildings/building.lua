@@ -21,7 +21,7 @@ updateStorage = function()
                     savedAmount = storage.amount
                 end
 
-                if building.storesWood and (not type or type == "Wood") then
+                if (not type or type == "Wood") then
                     local delta = math.min(wood, WOOD_MAX_STACK_SIZE)
 
                     if delta > 0 then
@@ -53,7 +53,7 @@ updateStorage = function()
                     end
                 end
 
-                if building.storesFood and (not type or type == "Food") and not storageSet then
+                if (not type or type == "Food") and not storageSet then
                     local delta = math.min(food, FOOD_MAX_STACK_SIZE)
 
                     if delta > 0 then
@@ -85,7 +85,7 @@ updateStorage = function()
                     end
                 end
 
-                if building.storesStone and (not type or type == "Stone") and not storageSet then
+                if (not type or type == "Stone") and not storageSet then
                     local delta = math.min(stone, STONE_MAX_STACK_SIZE)
 
                     if delta > 0 then
@@ -263,7 +263,6 @@ return {
 --                love.graphics.setColor(0, 0, 0, 0.3)
 --                love.graphics.draw(self.image, self.x + 20, self.y + 20, self.angle, self.scale, self.scale, self.originX, self.originY)
 --                love.graphics.setColor(1, 1, 1, 1)
-
                 if (isFloor and self.height == 0) or (not isFloor and self.height > 0) then
                     love.graphics.draw(self.image, self.x, self.y, self.angle, self.scale, self.scale, self.originX, self.originY)
 

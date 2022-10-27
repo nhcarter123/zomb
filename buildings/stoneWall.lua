@@ -6,7 +6,7 @@ return {
         building.description =  "Walls made of stacked stone"
         building.health = 200
         building.maxHealth = 200
-        building.cost = {{ "Stone", 1 } }
+        building.cost = {{ "Stone", 2 } }
         building.material = "Stone"
         building.image = STONE_WALL_1_IMAGE
 
