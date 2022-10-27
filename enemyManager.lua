@@ -96,7 +96,7 @@ return {
                     enemy = createZombie(x, y)
                 end
 
-                enemy.delay = distance * (1 + math.random() * 0.75) * enemy.timeScale / 1000
+                enemy.delay = distance * (1 + math.random() * 0.25) * enemy.timeScale / 1000
 
                 if enemy.delay < lowestDelay then
                     lowestDelay = enemy.delay

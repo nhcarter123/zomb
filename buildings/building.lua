@@ -254,8 +254,11 @@ return {
                     local slope = self.originY / self.originX
                     local scaleX = 1 + self.height * 150 / self.originX--self.scale * self.originX / GRID_SIZE-- + 6 / self.originX
                     local scaleY = 1 + self.height * 150 / self.originY--self.scale * self.originY / GRID_SIZE-- + 6 / self.originY
-                    DropShadowShader:send("size", { scaleX, scaleY, self.height / (self.scale * self.originX / GRID_SIZE), slope } )
+                    DropShadowShader2:send("size", { scaleX, scaleY, self.height, 1, 1 } )
+                    DropShadowShader2:send("ratio", { self.originX / GRID_SIZE, self.originY / GRID_SIZE } )
                     love.graphics.draw(self.image, self.x, self.y, self.angle, scaleX * self.scale, scaleY * self.scale, self.originX, self.originY)
+
+--                    love.graphics.draw(self.image, self.x, self.y, self.angle, self.scale, self.scale, self.originX, self.originY)
                 end
             end,
 

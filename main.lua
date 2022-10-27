@@ -45,6 +45,7 @@ Farm = require("buildings/farm")
 require("shaders/fowShader")
 require("shaders/outlineShader")
 DropShadowShader = require("shaders/dropShadowShader")
+DropShadowShader2 = require("shaders/dropShadowShader2")
 LineShader = require("shaders/lineShader")
 
 Selected = require("selected")
@@ -351,6 +352,9 @@ function love.load()
 ----                love.graphics.setColor(0.3, 0.3, 0.3)
 --                love.graphics.draw(ROCK_IMAGE, (i + GRID_TILES) * GRID_SIZE, (j + GRID_TILES) * GRID_SIZE, 0, 0.5, 0.5)
 ----                love.graphics.setColor(1, 1, 1)
+--                local building = Tree.create(i, j)
+--                table.insert(buildings, building)
+--                building:init()
             end
 
             love.graphics.setCanvas(gridcanvas)
@@ -1336,7 +1340,7 @@ local function drawCameraStuff(l,t,w,h)
         enemyUnits[i]:draw()
     end
 
-    love.graphics.setShader(DropShadowShader)
+    love.graphics.setShader(DropShadowShader2)
     for i = #buildings, 1, -1 do
         buildings[i]:drawShadow()
     end

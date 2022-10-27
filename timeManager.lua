@@ -41,7 +41,7 @@ local TimeManager = {
            angle = angle + toRad(180)
         end
 
-        DropShadowShader:send("shadow", { self.shadowLength, angle })
+        DropShadowShader2:send("shadow", { lengthDirX(self.shadowLength, angle), lengthDirY(self.shadowLength, angle) })
     end,
 
     update = function(self, dt)
