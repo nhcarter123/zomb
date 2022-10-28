@@ -84,9 +84,7 @@ buildings = {}
 grid = {}
 GRID_SIZE = 64
 GRID_SCALE = 2
-GRASS_SCALE = 1
 GRASS_TILE_SIZE = 256
-GRASS_PADDING_TILES = 0
 GRID_TILES = 60
 TOTAL_TILES = 2 * GRID_TILES + 1
 
@@ -286,20 +284,11 @@ function love.load()
         }),
     }
 
-    local grassTileCount = math.floor(TOTAL_TILES / (GRASS_SCALE * (GRASS_TILE_SIZE / GRID_SIZE))) + 1 + GRASS_PADDING_TILES * 2
-    GRASS_CANVAS = love.graphics.newCanvas(grassTileCount * GRASS_TILE_SIZE, grassTileCount * GRASS_TILE_SIZE)
-    love.graphics.setCanvas(GRASS_CANVAS)
-
-    for i = 0, grassTileCount do
-        for j = 0, grassTileCount do
-            love.graphics.draw(GRASS_IMAGE, i * GRASS_TILE_SIZE, j * GRASS_TILE_SIZE)
-        end
-    end
+    local gridSize = GRID_SIZE * TOTAL_TILES
+    ROOF_CANVAS = love.graphics.newCanvas(gridSize, gridSize)
 
     local tileSize = GRID_SIZE / GRID_SCALE
     gridcanvas = love.graphics.newCanvas(TOTAL_TILES * tileSize, TOTAL_TILES * tileSize)
-
-    love.graphics.setCanvas(gridcanvas)
 
     local baseNoiseScale = 2
     local noiseScale1 = 1 * baseNoiseScale
@@ -348,13 +337,14 @@ function love.load()
 
             if mountainNoise > 0.6 then
                 isMountain = true
---                love.graphics.setCanvas(GRASS_CANVAS)
-----                love.graphics.setColor(0.3, 0.3, 0.3)
+--                love.graphics.setCanvas(ROOF_CANVAS)
 --                love.graphics.draw(ROCK_IMAGE, (i + GRID_TILES) * GRID_SIZE, (j + GRID_TILES) * GRID_SIZE, 0, 0.5, 0.5)
+
+                ----                love.graphics.setColor(0.3, 0.3, 0.3)
 ----                love.graphics.setColor(1, 1, 1)
---                local building = Tree.create(i, j)
---                table.insert(buildings, building)
---                building:init()
+                local building = Tree.create(i, j)
+                table.insert(buildings, building)
+                building:init()
             end
 
             love.graphics.setCanvas(gridcanvas)
@@ -371,7 +361,7 @@ function love.load()
                 local building = Rock.create(i, j)
                 table.insert(buildings, building)
                 building:init()
---                love.graphics.setCanvas(GRASS_CANVAS)
+--                love.graphics.setCanvas(ROOF_CANVAS)
 --                if math.random() > 0.5 then
 --                    love.graphics.draw(ROCK_2_IMAGE, (i + GRID_TILES) * GRID_SIZE, (j + GRID_TILES) * GRID_SIZE, 0, 0.5, 0.5, 0, 0)
 --                else
@@ -382,11 +372,18 @@ function love.load()
         end
     end
 
-    DEBRIS_CANVAS_SCALE = 1
-    DEBRIS_CANVAS = love.graphics.newCanvas(2 * GRID_SIZE * GRID_TILES / DEBRIS_CANVAS_SCALE, 2 * GRID_SIZE * GRID_TILES / DEBRIS_CANVAS_SCALE)
+    FLOOR_CANVAS_SCALE = 1
+    FLOOR_CANVAS = love.graphics.newCanvas(GRID_SIZE * TOTAL_TILES / FLOOR_CANVAS_SCALE, GRID_SIZE * TOTAL_TILES / FLOOR_CANVAS_SCALE)
+    love.graphics.setCanvas(FLOOR_CANVAS)
+
+    local grassTileCount = math.floor(TOTAL_TILES * GRID_SIZE / GRASS_TILE_SIZE)
+    for i = 0, grassTileCount do
+        for j = 0, grassTileCount do
+            love.graphics.draw(GRASS_IMAGE, i * GRASS_TILE_SIZE, j * GRASS_TILE_SIZE)
+        end
+    end
 
     love.graphics.setCanvas()
-
 
     local house = House.create(-2, 0)
     table.insert(buildings, house)
@@ -484,60 +481,18 @@ end
 function getNeighbors(node)
     local neighbors = {}
 
---    not (k == 1 and l == 1 and grid[i + 1][j].building and grid[i][j + 1].building) and
---    not (k == -1 and l == 1 and grid[i - 1][j].building and grid[i][j + 1].building) and
---    not (k == -1 and l == -1 and grid[i - 1][j].building and grid[i][j - 1].building) and
---    not (k == 1 and l == -1 and grid[i + 1][j].building and grid[i][j - 1].building)
-
     if node.x - 1 >= -GRID_TILES then
         table.insert(neighbors, { x = node.x - 1, y = node.y })
---        if node.y - 1 >= -GRID_TILES and not (grid[node.x - 1][node.y].building and grid[node.x][node.y - 1].building) then
---            table.insert(neighbors, { x = node.x - 1, y = node.y - 1 })
---        end
     end
     if node.x + 1 <= GRID_TILES then
         table.insert(neighbors, { x = node.x + 1, y = node.y })
---        if node.y + 1 <= GRID_TILES and not (grid[node.x + 1][node.y].building and grid[node.x][node.y + 1].building) then
---            table.insert(neighbors, { x = node.x + 1, y = node.y + 1 })
---        end
     end
     if node.y - 1 >= -GRID_TILES then
         table.insert(neighbors, { x = node.x, y = node.y - 1 })
---        if node.x + 1 <= GRID_TILES and not (grid[node.x + 1][node.y].building and grid[node.x][node.y - 1].building) then
---            table.insert(neighbors, { x = node.x + 1, y = node.y - 1 })
---        end
     end
     if node.y + 1 <= GRID_TILES then
         table.insert(neighbors, { x = node.x, y = node.y + 1 })
---        if node.x - 1 >= -GRID_TILES and not (grid[node.x - 1][node.y].building and grid[node.x][node.y + 1].building) then
---            table.insert(neighbors, { x = node.x - 1, y = node.y + 1 })
---        end
     end
-
---    if node.x - 1 >= -GRID_TILES then
---        table.insert(neighbors, { x = node.x - 1, y = node.y })
---        if node.y - 1 >= -GRID_TILES then
---            table.insert(neighbors, { x = node.x - 1, y = node.y - 1 })
---        end
---    end
---    if node.x + 1 <= GRID_TILES then
---        table.insert(neighbors, { x = node.x + 1, y = node.y })
---        if node.y + 1 <= GRID_TILES then
---            table.insert(neighbors, { x = node.x + 1, y = node.y + 1 })
---        end
---    end
---    if node.y - 1 >= -GRID_TILES then
---        table.insert(neighbors, { x = node.x, y = node.y - 1 })
---        if node.x + 1 <= GRID_TILES then
---            table.insert(neighbors, { x = node.x + 1, y = node.y - 1 })
---        end
---    end
---    if node.y + 1 <= GRID_TILES then
---        table.insert(neighbors, { x = node.x, y = node.y + 1 })
---        if node.x - 1 >= -GRID_TILES then
---            table.insert(neighbors, { x = node.x - 1, y = node.y + 1 })
---        end
---    end
 
     return neighbors
 end
@@ -1255,7 +1210,7 @@ function love.update(dt)
 --        end
     end
 
-    love.graphics.setCanvas(DEBRIS_CANVAS)
+    love.graphics.setCanvas(FLOOR_CANVAS)
     for i = #bullets, 1, -1 do
         local bullet = bullets[i]
         local shouldDelete = bullet:update(gameDt)
@@ -1264,7 +1219,7 @@ function love.update(dt)
                 love.graphics.draw(bullet.ammo.hitImage,
                     bullet.x + GRID_SIZE * GRID_TILES,
                     bullet.y + GRID_SIZE * GRID_TILES,
-                    bullet.angle, bullet.scale / DEBRIS_CANVAS_SCALE, bullet.scale / DEBRIS_CANVAS_SCALE,
+                    bullet.angle, bullet.scale / FLOOR_CANVAS_SCALE, bullet.scale / FLOOR_CANVAS_SCALE,
                     bullet.originX, bullet.originY)
             end
 
@@ -1313,18 +1268,36 @@ function love.update(dt)
 end
 
 local function drawCameraStuff(l,t,w,h)
-    love.graphics.draw(GRASS_CANVAS,
-        -GRID_SIZE * (GRID_TILES + 0.5) - GRASS_PADDING_TILES * GRASS_TILE_SIZE * GRASS_SCALE,
-        -GRID_SIZE * (GRID_TILES + 0.5) - GRASS_PADDING_TILES * GRASS_TILE_SIZE * GRASS_SCALE,
+    local canvasX = -GRID_SIZE * (GRID_TILES + 0.5)
+    local canvasY = -GRID_SIZE * (GRID_TILES + 0.5)
+
+    ---- Floor
+    love.graphics.draw(FLOOR_CANVAS,
+        canvasX,
+        canvasY,
+        0, FLOOR_CANVAS_SCALE, FLOOR_CANVAS_SCALE)
+
+    for i = 1, #enemyUnits, 1 do
+        enemyUnits[i]:draw()
+    end
+
+    ---- Roof shadow
+    love.graphics.setShader(DropShadowShader2)
+    DropShadowShader2:send("size", { 1, 1, 0.01 } )
+    DropShadowShader2:send("ratio", { 1, 1 } )
+    love.graphics.draw(ROOF_CANVAS,
+        canvasX,
+        canvasY,
+        0, GRASS_SCALE, GRASS_SCALE)
+    love.graphics.setShader()
+
+    ---- Roof
+    love.graphics.draw(ROOF_CANVAS,
+        canvasX,
+        canvasY,
         0, GRASS_SCALE, GRASS_SCALE)
 
-    love.graphics.draw(DEBRIS_CANVAS,
-        -GRID_SIZE * GRID_TILES,
-        -GRID_SIZE * GRID_TILES,
-        0, DEBRIS_CANVAS_SCALE, DEBRIS_CANVAS_SCALE)
-
-    -- Draw grid
-
+    ---- Draw grid
     if SELECTED then
         local scale = math.min(cam:getScale() / 2 - 0.1, 0.25)
         love.graphics.setColor(1, 1, 1, scale)
@@ -1332,24 +1305,20 @@ local function drawCameraStuff(l,t,w,h)
         love.graphics.setColor(1, 1, 1, 1)
     end
 
-    for i = #buildings, 1, -1 do
-        buildings[i]:draw(true)
-    end
+--    for i = #buildings, 1, -1 do
+--        buildings[i]:draw(true)
+--    end
 
-    for i = 1, #enemyUnits, 1 do
-        enemyUnits[i]:draw()
-    end
+--    love.graphics.setShader(DropShadowShader2)
+--    for i = #buildings, 1, -1 do
+--        buildings[i]:drawShadow()
+--    end
+--    love.graphics.setShader()
 
-    love.graphics.setShader(DropShadowShader2)
-    for i = #buildings, 1, -1 do
-        buildings[i]:drawShadow()
-    end
-    love.graphics.setShader()
-
-    -- Todo separate floor and roof buildings somehow?
-    for i = #buildings, 1, -1 do
-        buildings[i]:draw(false)
-    end
+--    -- Todo separate floor and roof buildings somehow?
+--    for i = #buildings, 1, -1 do
+--        buildings[i]:draw(false)
+--    end
 
 --    love.graphics.draw(SPRITE_BATCH)
 
@@ -1366,6 +1335,18 @@ local function drawCameraStuff(l,t,w,h)
         explosions[i]:draw()
     end
     love.graphics.setBlendMode("alpha")
+
+    local highlightedTiles = merge(SAVED_SELECTED_TILES, SELECTED_TILES)
+    for i = 1, #highlightedTiles do
+        highlightedTiles[i].building:drawHighlight(true, #highlightedTiles == 1)
+    end
+
+    if HOVERED_TILE and HOVERED_TILE.building
+        and not contains(SELECTED_TILES, HOVERED_TILE)
+        and not contains(SAVED_SELECTED_TILES, HOVERED_TILE)
+    then
+        HOVERED_TILE.building:drawHighlight(false)
+    end
 
     if SELECTED then
         SELECTED:draw()
@@ -1384,7 +1365,7 @@ local function drawCameraStuff(l,t,w,h)
             for j = -GRID_TILES, GRID_TILES, 1 do
 --                local value = grid[i][j].weight
 --                love.graphics.print(tostring(roundDecimal(value, 2)), i * GRID_SIZE, j * GRID_SIZE)
---                local value = grid[i][j].weight
+--                local value = grid[i][j].building
 --                love.graphics.print(tostring(value), i * GRID_SIZE, j * GRID_SIZE)
 
     --            local value = grid[i][j].noise
@@ -1461,7 +1442,6 @@ function getClosest(x, y, targets, fuzziness, filter)
             if dist < lowestRange then
                 lowestRange = dist
                 closest = target
-
             end
         end
     end
@@ -1491,4 +1471,16 @@ function contains(table, value)
     end
 
     return false
+end
+
+function merge(table1, table2)
+    local merged = {}
+    for i = 1, #table1 do
+        table.insert(merged, table1[i])
+    end
+    for i = 1, #table2 do
+        table.insert(merged, table2[i])
+    end
+
+    return merged
 end

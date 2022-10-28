@@ -229,6 +229,8 @@ return {
                         self:setWallImages()
                     end
 
+                    self:removeFromCanvas()
+
                     return true -- flag for deletion
                 end
             end,
@@ -249,38 +251,49 @@ return {
                 end
             end,
 
-            drawShadow = function(self)
-                if self.height > 0 then
-                    local slope = self.originY / self.originX
-                    local scaleX = 1 + self.height * 150 / self.originX--self.scale * self.originX / GRID_SIZE-- + 6 / self.originX
-                    local scaleY = 1 + self.height * 150 / self.originY--self.scale * self.originY / GRID_SIZE-- + 6 / self.originY
-                    DropShadowShader2:send("size", { scaleX, scaleY, self.height, 1, 1 } )
-                    DropShadowShader2:send("ratio", { self.originX / GRID_SIZE, self.originY / GRID_SIZE } )
-                    love.graphics.draw(self.image, self.x, self.y, self.angle, scaleX * self.scale, scaleY * self.scale, self.originX, self.originY)
+--            drawShadow = function(self)
+--                if self.height > 0 then
+--                    local slope = self.originY / self.originX
+--                    local scaleX = 1 + self.height * 150 / self.originX--self.scale * self.originX / GRID_SIZE-- + 6 / self.originX
+--                    local scaleY = 1 + self.height * 150 / self.originY--self.scale * self.originY / GRID_SIZE-- + 6 / self.originY
+--                    DropShadowShader2:send("size", { scaleX, scaleY, self.height, 1, 1 } )
+--                    DropShadowShader2:send("ratio", { self.originX / GRID_SIZE, self.originY / GRID_SIZE } )
+--                    love.graphics.draw(self.image, self.x, self.y, self.angle, scaleX * self.scale, scaleY * self.scale, self.originX, self.originY)
+--
+----                    love.graphics.draw(self.image, self.x, self.y, self.angle, self.scale, self.scale, self.originX, self.originY)
+--                end
+--            end,
 
---                    love.graphics.draw(self.image, self.x, self.y, self.angle, self.scale, self.scale, self.originX, self.originY)
+            drawHighlight = function(self, strong, shouldDrawAOE)
+                if strong then
+                    OUTLINE_SHADER:send("opacity", 0.7)
+                else
+                    OUTLINE_SHADER:send("opacity", 0.3)
+                end
+
+                love.graphics.setShader(OUTLINE_SHADER)
+                love.graphics.draw(self.image, self.x, self.y, self.angle, self.scale, self.scale, self.originX, self.originY)
+                love.graphics.setShader()
+
+                if self.getAOE and shouldDrawAOE then
+                    self:drawAOE()
                 end
             end,
 
-            draw = function(self, isFloor)
---                love.graphics.setColor(0, 0, 0, 0.3)
---                love.graphics.draw(self.image, self.x + 20, self.y + 20, self.angle, self.scale, self.scale, self.originX, self.originY)
---                love.graphics.setColor(1, 1, 1, 1)
-                if (isFloor and self.height == 0) or (not isFloor and self.height > 0) then
-                    love.graphics.draw(self.image, self.x, self.y, self.angle, self.scale, self.scale, self.originX, self.originY)
+            addToCanvas = function(self)
+                love.graphics.setCanvas(ROOF_CANVAS)
+                love.graphics.draw(self.image, (self.gridX + GRID_TILES + 0.5 + self.offsetX) * GRID_SIZE, (self.gridY + GRID_TILES + 0.5 + self.offsetY) * GRID_SIZE, self.angle, self.scale, self.scale, self.originX, self.originY)
+                love.graphics.setCanvas()
+            end,
 
-                    if self.highlighted or (HOVERED_TILE and HOVERED_TILE.building == self and not SELECTED) then
-                        if self.highlighted then
-                            OUTLINE_SHADER:send("opacity", 0.7)
-                        else
-                            OUTLINE_SHADER:send("opacity", 0.3)
-                        end
-
-                        love.graphics.setShader(OUTLINE_SHADER)
-                        love.graphics.draw(self.image, self.x, self.y, self.angle, self.scale, self.scale, self.originX, self.originY)
-                        love.graphics.setShader()
-                    end
-                end
+            removeFromCanvas = function(self)
+                love.graphics.setBlendMode("replace")
+                love.graphics.setColor(1, 1, 1, 0)
+                love.graphics.setCanvas(ROOF_CANVAS)
+                love.graphics.draw(self.image, (self.gridX + GRID_TILES + 0.5 + self.offsetX) * GRID_SIZE, (self.gridY + GRID_TILES + 0.5 + self.offsetY) * GRID_SIZE, self.angle, self.scale, self.scale, self.originX, self.originY)
+                love.graphics.setCanvas()
+                love.graphics.setBlendMode("alpha")
+                love.graphics.setColor(1, 1, 1)
             end,
 
             postDraw = function(self)
@@ -359,6 +372,8 @@ return {
 
                             if building and building.isWall then
                                 building:setImage()
+                                building:removeFromCanvas()
+                                building:addToCanvas()
                             end
                         end
                     end
@@ -366,11 +381,10 @@ return {
             end,
 
             drawAOE = function(self)
+                love.graphics.setColor(1, 1, 1, 0.1)
+
                 for i = 1, #self.aoe do
                     local tile = self.aoe[i]
-
-                    love.graphics.setColor(1, 1, 1, 0.1)
-
                     love.graphics.rectangle("fill", self.x + (tile[1] - 0.5 - self.offsetX) * GRID_SIZE + 2, self.y + (tile[2] - 0.5 - self.offsetY) * GRID_SIZE + 2, GRID_SIZE - 4, GRID_SIZE - 4)
                 end
 
@@ -399,6 +413,14 @@ return {
 
                 if self.needsWorker or self.isHouse then
                     setWorkers()
+                end
+
+                if self.getAOE then
+                    self:getAOE()
+                end
+
+                if not self.isWall then
+                    self:addToCanvas()
                 end
 
                 self.initialized = true

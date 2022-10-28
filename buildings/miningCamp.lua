@@ -45,15 +45,6 @@ return {
             self.aoe = tiles
         end
 
-        local parentPostDraw = building.postDraw
-        building.postDraw = function(self)
-            parentPostDraw(self)
-
-            if self.highlighted == 2 then
-                self:drawAOE()
-            end
-        end
-
         local parentUpdate = building.update
         building.update = function(self, dt)
             if parentUpdate(self) then

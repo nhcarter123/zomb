@@ -20,7 +20,7 @@ return {
         --    building.scale = 1
         --    building.scale = 0.16 + math.random() * 0.02
 --        building.scale = 0.42 + math.random() * 0.15
-        building.scale = 0.32 + math.random() * 0.08
+        building.scale = 0.3 + math.random() * 0.08
 
         building.getStats = function(self)
             return {

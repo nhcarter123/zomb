@@ -85,15 +85,6 @@ return {
             end
         end
 
-        local parentPostDraw = building.postDraw
-        building.postDraw = function(self)
-            parentPostDraw(self)
-
-            if self.highlighted == 2 then
-                self:drawAOE()
-            end
-        end
-
         local parentInit = building.init
         building.init = function(self)
             parentInit(self)

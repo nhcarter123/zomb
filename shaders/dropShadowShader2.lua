@@ -7,8 +7,6 @@ return love.graphics.newShader[[
     const float POWER   = 2.0 / float(SAMPLES);
     const float DECAY   = 1;
 
-    float rand(vec2 seed) { return fract(sin(dot(seed.xy ,vec2(12.9898, 78.233)))*43758.5453); }
-
     vec4 effect( vec4 col, Image texture, vec2 texturePos, vec2 screenPos )
     {
 
@@ -25,30 +23,3 @@ return love.graphics.newShader[[
         return vec4(0, 0, 0, baseAlpha * alpha);
     }
 ]]
-
---return love.graphics.newShader[[
---    extern float slope;
---    extern float shadowLength;
---
---    vec4 effect( vec4 col, Image texture, vec2 texturePos, vec2 screenPos )
---    {
---        float alpha = 0;
---        float baseAlpha = 0.9 - abs(shadowLength) * 2.2;
---        float ratio = texturePos.x / texturePos.y;
---
---        vec2 scaledPos = texturePos * 2 - 0.5;
---
---        float diff = abs(scaledPos.y - scaledPos.x);
---        float factor = shadowLength * diff / 2 + shadowLength;
---
---        if (diff < sign(shadowLength) * factor * 2) {
---            scaledPos = scaledPos - sign(shadowLength) * vec2(-diff, diff / slope) / 2;
---        } else {
---            scaledPos = scaledPos - vec2(-factor, factor / slope);
---        }
---
---        alpha = baseAlpha * Texel(texture, scaledPos).a * (1 - diff / 2);
---
---        return vec4(0, 0, 0, alpha);
---    }
---]]

@@ -57,15 +57,6 @@ return {
             self.aoe = tiles
         end
 
-        local parentPostDraw = building.postDraw
-        building.postDraw = function(self)
-            parentPostDraw(self)
-
-            if self.highlighted == 2 then
-                self:drawAOE()
-            end
-        end
-
         local parentUpdate = building.update
         building.update = function(self, dt)
             if parentUpdate(self) then
@@ -109,14 +100,6 @@ return {
                 self.pct = nil
             end
         end
-
---        building.nextDay = function(self)
---            if self.closestTarget and self.closestTarget.wood > 0 then
---                local deltaWood = math.min(self.woodProduction, self.closestTarget.wood)
---                self.closestTarget.wood = self.closestTarget.wood - deltaWood
---                WOOD = WOOD + deltaWood
---            end
---        end
 
         building:getAOE()
 
