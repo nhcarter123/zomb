@@ -229,6 +229,12 @@ return {
                         self:setWallImages()
                     end
 
+                    for i = #STORAGE_BUILDINGS, 1, -1 do
+                       if STORAGE_BUILDINGS[1] == self then
+                           table.remove(STORAGE_BUILDINGS, i)
+                       end
+                    end
+
                     self:removeFromCanvas()
 
                     return true -- flag for deletion

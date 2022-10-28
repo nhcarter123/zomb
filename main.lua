@@ -81,6 +81,8 @@ explosions = {}
 bullets = {}
 buildings = {}
 
+STORAGE_BUILDINGS = {}
+
 grid = {}
 GRID_SIZE = 64
 GRID_SCALE = 2
@@ -473,6 +475,10 @@ function calculateCostOfTravel(node, targetNode)
 
     if tile.building then
         score = score + 5 * tile.building.health / 100
+
+        if tile.building.isTree or tile.building.isRock then
+            score = score + 500
+        end
     end
 
     return score + previousTile.units / 20 + tile.units / 35
@@ -1308,6 +1314,10 @@ local function drawCameraStuff(l,t,w,h)
 --    for i = #buildings, 1, -1 do
 --        buildings[i]:draw(true)
 --    end
+
+    for i = 1, #STORAGE_BUILDINGS do
+        STORAGE_BUILDINGS[i]:draw()
+    end
 
 --    love.graphics.setShader(DropShadowShader2)
 --    for i = #buildings, 1, -1 do

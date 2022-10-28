@@ -79,17 +79,17 @@ return {
 --                love.graphics.draw(STORAGE_ROOF_IMAGE, self.x, self.y, self.angle, self.scale, self.scale, self.originX, self.originY)
 --            end
 
-            if self.highlighted or (HOVERED_TILE and HOVERED_TILE.building == self and not SELECTED) then
-                if self.highlighted then
-                    OUTLINE_SHADER:send("opacity", 0.7)
-                else
-                    OUTLINE_SHADER:send("opacity", 0.3)
-                end
-
-                love.graphics.setShader(OUTLINE_SHADER)
-                love.graphics.draw(STORAGE_FLOOR_IMAGE, self.x, self.y, self.angle, self.scale, self.scale, self.originX, self.originY)
-                love.graphics.setShader()
-            end
+--            if self.highlighted or (HOVERED_TILE and HOVERED_TILE.building == self and not SELECTED) then
+--                if self.highlighted then
+--                    OUTLINE_SHADER:send("opacity", 0.7)
+--                else
+--                    OUTLINE_SHADER:send("opacity", 0.3)
+--                end
+--
+--                love.graphics.setShader(OUTLINE_SHADER)
+--                love.graphics.draw(STORAGE_FLOOR_IMAGE, self.x, self.y, self.angle, self.scale, self.scale, self.originX, self.originY)
+--                love.graphics.setShader()
+--            end
         end
 
 
@@ -97,6 +97,8 @@ return {
         building.init = function(self)
             parentInit(self)
             updateStorage()
+
+            table.insert(STORAGE_BUILDINGS, self)
         end
 
         return building

@@ -45,10 +45,10 @@ return {
         local dayScore = math.pow(2 * (TimeManager.day * 24 + TimeManager.time), 1.05)
         local strength = buildingScore + resourceScore + popScore + dayScore
 
-        love.window.showMessageBox("test", tostring(buildingScore))
-        love.window.showMessageBox("test", tostring(resourceScore))
-        love.window.showMessageBox("test", tostring(popScore))
-        love.window.showMessageBox("test", tostring(dayScore))
+--        love.window.showMessageBox("test", tostring(buildingScore))
+--        love.window.showMessageBox("test", tostring(resourceScore))
+--        love.window.showMessageBox("test", tostring(popScore))
+--        love.window.showMessageBox("test", tostring(dayScore))
 
         local enemyPoints = round(mod * (strength / 4))
         local groupCount = math.ceil(math.random() * 8)
