@@ -39,10 +39,10 @@ return {
 
     spawn = function(self, mod)
         local mod = 1 + math.random() / 4
-        local buildingScore = self:calculateBuildingWealth() / 50
-        local resourceScore = self:calculateResourceWealth()/ 50
+        local buildingScore = self:calculateBuildingWealth() / 25
+        local resourceScore = self:calculateResourceWealth() / 25
         local popScore = POPULATION
-        local dayScore = math.pow(2 * (TimeManager.day * 24 + TimeManager.time), 1.05)
+        local dayScore = math.pow(2 * (TimeManager.day * 24 + TimeManager.time), 1.08)
         local strength = buildingScore + resourceScore + popScore + dayScore
 
 --        love.window.showMessageBox("test", tostring(buildingScore))

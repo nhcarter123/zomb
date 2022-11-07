@@ -9,6 +9,12 @@ return {
             cost = cost,
             createFn = createFn,
 
+            setCanPlace = function(self)
+                local tile = grid[self.obj.gridX][self.obj.gridY]
+                local isValid = (self.obj.placeOnMountain and tile.isMountain) or (not self.obj.placeOnMountain and not tile.isMountain)
+                self.canPlace =  not doesOverlap(self.obj.gridX - self.obj.offsetX * 2, self.obj.gridY - self.obj.offsetY * 2, self.obj.shape) and self:canAfford() and isValid
+            end,
+
             canAfford = function(self)
                 local canAfford = true
                 for i = 1, #self.cost do
@@ -38,19 +44,15 @@ return {
                 local gridY = toGridSpace(worldMy + GRID_SIZE * self.obj.offsetY)
 
                 if gridX ~= self.gridX or gridY ~= self.gridY or not self.visible then
-                    self.visible = true
-                    self.canPlace = not doesOverlap(gridX - self.obj.offsetX * 2, gridY - self.obj.offsetY * 2, self.obj.shape) and self:canAfford()
-
-                    if self.canPlace then
-                        self.obj.x = (gridX - self.obj.offsetX) * GRID_SIZE
-                        self.obj.y = (gridY - self.obj.offsetY) * GRID_SIZE
-                    else
-                        self.obj.x = worldMx
-                        self.obj.y = worldMy
-                    end
-
                     self.obj.gridX = gridX - self.obj.offsetX * 2
                     self.obj.gridY = gridY - self.obj.offsetY * 2
+
+                    self.visible = true
+                    self:setCanPlace()
+
+                    self.obj.x = (gridX - self.obj.offsetX) * GRID_SIZE
+                    self.obj.y = (gridY - self.obj.offsetY) * GRID_SIZE
+
                     if self.obj.getAOE then
                         self.obj:getAOE()
                     end
@@ -75,7 +77,7 @@ return {
                     self.visible = false
                     self.obj:init()
                     self.obj = self.createFn(0, 0)
-                    self.canPlace = not doesOverlap(self.obj.gridX, self.obj.gridY, self.obj.shape) and self:canAfford()
+                    self:setCanPlace()
                 end
             end,
 

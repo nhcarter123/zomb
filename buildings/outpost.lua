@@ -6,7 +6,7 @@ return {
         building.title = "Tower"
         building.description = "Attacks nearby enemies"
         building.state = "Sentry"
-        building.connectsWithWall = true
+        building.placeOnMountain = true
         building.searchDuration = searchDuration
         building.searchCount = math.random() * searchDuration
         building.gun = createBow()

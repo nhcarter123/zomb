@@ -17,8 +17,8 @@ return {
 
             for j = -1, 1 do
                 for i = -1, 1 do
-                    local neighbor = grid[self.gridX + i][self.gridY + j].building
-                    if neighbor and (neighbor.isWall or neighbor.connectsWithWall) then
+                    local neighbor = grid[self.gridX + i][self.gridY + j]
+                    if (neighbor.building and neighbor.building.isWall) or neighbor.isMountain then
                         hash = hash.."1"
                     else
                         hash = hash.."0"

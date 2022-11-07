@@ -173,9 +173,9 @@ function createZombie(x, y)
 --            self.targetY = lerp(self.targetY, tile.flow[self.path].nextTile.y + lengthDirY(self.spread, tile.flow[self.path].dir + toRad(90)), 0.02)
 
             local spreadFactor = 1
---            if tile.tight then
---                spreadFactor = 0.25
---            end
+            if tile.tight then
+                spreadFactor = 0
+            end
 
             self.targetX = self.cachedTile.x + lengthDirX(spreadFactor * self.spread, tile.flow[self.path].dir + toRad(90))
             self.targetY = self.cachedTile.y + lengthDirY(spreadFactor * self.spread, tile.flow[self.path].dir + toRad(90))

@@ -225,7 +225,7 @@ return {
                         setWorkers()
                     end
 
-                    if self.isWall or self.connectsWithWall then
+                    if self.isWall then
                         self:setWallImages()
                     end
 
@@ -287,15 +287,25 @@ return {
             end,
 
             addToCanvas = function(self)
-                love.graphics.setCanvas(ROOF_CANVAS)
+                if self.height == 0 then
+                    love.graphics.setCanvas(FLOOR_CANVAS)
+                else
+                    love.graphics.setCanvas(ROOF_CANVAS)
+                end
+
                 love.graphics.draw(self.image, (self.gridX + GRID_TILES + 0.5 + self.offsetX) * GRID_SIZE, (self.gridY + GRID_TILES + 0.5 + self.offsetY) * GRID_SIZE, self.angle, self.scale, self.scale, self.originX, self.originY)
                 love.graphics.setCanvas()
             end,
 
             removeFromCanvas = function(self)
+                if self.height == 0 then
+                    love.graphics.setCanvas(FLOOR_CANVAS)
+                else
+                    love.graphics.setCanvas(ROOF_CANVAS)
+                end
+
                 love.graphics.setBlendMode("replace")
                 love.graphics.setColor(1, 1, 1, 0)
-                love.graphics.setCanvas(ROOF_CANVAS)
                 love.graphics.draw(self.image, (self.gridX + GRID_TILES + 0.5 + self.offsetX) * GRID_SIZE, (self.gridY + GRID_TILES + 0.5 + self.offsetY) * GRID_SIZE, self.angle, self.scale, self.scale, self.originX, self.originY)
                 love.graphics.setCanvas()
                 love.graphics.setBlendMode("alpha")
