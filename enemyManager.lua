@@ -16,6 +16,7 @@ return {
     spawnCount = 0,
     spawnDuration = 15000000000,
     enemiesToSpawn = {},
+    spawnTiles = {},
 
     update = function(self, dt)
         self.spawnCount = self.spawnCount + dt
@@ -51,7 +52,7 @@ return {
 --        love.window.showMessageBox("test", tostring(dayScore))
 
         local enemyPoints = round(mod * (strength / 4))
-        local groupCount = math.ceil(math.random() * 8)
+        local groupCount = math.ceil(math.random() * 6)
         local zombieValue = 4
         local ogreValue = 16
 
@@ -62,21 +63,24 @@ return {
             local groupPoints = math.ceil(strength / groupCount) -- this can be improved
             local groupX, groupY
 
-            if math.random() > 0.5 then
-                groupX = (GRID_TILES + 3) * GRID_SIZE
-                groupY = 2 * GRID_TILES * GRID_SIZE * (math.random() - 0.5)
-
-                if math.random() > 0.5 then
-                    groupX = -groupX
-                end
-            else
-                groupX = 2 * GRID_TILES * GRID_SIZE * (math.random() - 0.5)
-                groupY = (GRID_TILES + 3) * GRID_SIZE
-
-                if math.random() > 0.5 then
-                    groupY = -groupY
-                end
-            end
+            local spawnTile = self.spawnTiles[math.floor(#self.spawnTiles * math.random()) + 1]
+            local groupX = spawnTile[1] * GRID_SIZE
+            local groupY = spawnTile[2] * GRID_SIZE
+--            if math.random() > 0.5 then
+--                groupX = (GRID_TILES + 3) * GRID_SIZE
+--                groupY = 2 * GRID_TILES * GRID_SIZE * (math.random() - 0.5)
+--
+--                if math.random() > 0.5 then
+--                    groupX = -groupX
+--                end
+--            else
+--                groupX = 2 * GRID_TILES * GRID_SIZE * (math.random() - 0.5)
+--                groupY = (GRID_TILES + 3) * GRID_SIZE
+--
+--                if math.random() > 0.5 then
+--                    groupY = -groupY
+--                end
+--            end
 
             local dir = angle(groupX, groupY, 0, 0)
             local distance = dist(groupX, groupY, 0, 0)

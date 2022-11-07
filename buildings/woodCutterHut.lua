@@ -47,7 +47,7 @@ return {
         end
 
         building.getAOE = function(self)
-            local tiles, targets = getGridCircle(self.gridX, self.gridY, 5, isTree, 0, 0)
+            local tiles, targets = getGridCircle(self.gridX, self.gridY, 8, isTree, 0, 0)
             local closest = getClosest(self.gridX * GRID_SIZE, self.gridY * GRID_SIZE, targets)
             if closest then
                 self.targets = { closest }

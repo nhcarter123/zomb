@@ -16,6 +16,7 @@ return {
         building.isTree = true
         building.wood = 100
         building.height = 2
+        building.connectsWithWall = true
 --        building.angle = toRad(math.random() * 360)
         --    building.scale = 1
         --    building.scale = 0.16 + math.random() * 0.02

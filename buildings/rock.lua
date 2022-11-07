@@ -17,6 +17,7 @@ return {
         building.description = "A giant boulder"
         building.isStone = true
         building.stone = 200
+        building.connectsWithWall = true
 --        building.angle = toRad(math.random() * 360)
         --    building.scale = 1
         --    building.scale = 0.16 + math.random() * 0.02

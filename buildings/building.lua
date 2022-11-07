@@ -225,7 +225,7 @@ return {
                         setWorkers()
                     end
 
-                    if self.isWall then
+                    if self.isWall or self.connectsWithWall then
                         self:setWallImages()
                     end
 

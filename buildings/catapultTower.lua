@@ -5,7 +5,7 @@ return {
         building.title = "Catapult tower"
         building.description = "Attacks enemies"
         building.cost = {{ "Wood", 25 }, { "Stone", 10 } }
-        building.range = 11
+        building.range = 13
         building.gun = Catapult.create()
 
         building.getStats = function(self)

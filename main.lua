@@ -306,7 +306,7 @@ function love.load()
         for j = -GRID_TILES, GRID_TILES do
             grid[i][j] = {
                 building = nil,
-                isMountain = true,
+                mountain = 1,
                 units = 0,
                 flowDir = 0,
                 flow = {
@@ -339,17 +339,20 @@ function love.load()
 --                local realY = (mapTileY - round(mapSize / 2)) / mapConversion
                 if mapTile == 1 then
                     local distance = dist(i, j, gridX, gridY)
-                    local distanceToCenter = dist(i, j, 0, 0)
-                    valleyScore = valleyScore + (0.5 * mapSize / math.pow(distance, 3)) * (1 + (math.random() - 0.5) / 1.4) + math.max(0, distanceToCenter - (GRID_TILES * 0.9)) / 3000
+                    valleyScore = valleyScore + (0.5 * mapSize / math.pow(distance, 3)) * (1 + (math.random() - 0.5) / 1.4)
                 end
 --
 --                if distance < 17 then
---                    tile.isMountain = false
+--                    tile.mountain = false
 --                end
             end
 
             if valleyScore > 1 then
-                tile.isMountain = false
+                tile.mountain = nil
+            end
+
+            if valleyScore < 0.3 then
+                tile.mountain = 2
             end
         end
     end
@@ -357,6 +360,7 @@ function love.load()
     local baseNoiseScale = 2
     local noiseScale1 = 1 * baseNoiseScale
     local noiseScale3 = 3 * baseNoiseScale
+    local noiseScale4 = 4 * baseNoiseScale
     local noiseScale6 = 6 * baseNoiseScale
     local noiseScale12 = 12 * baseNoiseScale
     local noiseOffsetX = math.random() * 10000
@@ -366,32 +370,49 @@ function love.load()
         for j = -GRID_TILES, GRID_TILES do
             local tile = grid[i][j]
 
+            ---- Set enemy spawn tiles
+            if i == -GRID_TILES or i == GRID_TILES or j == -GRID_TILES or j == GRID_TILES then
+                if not tile.mountain then
+                    table.insert(EnemyManager.spawnTiles, { i, j })
+                end
+            end
+
             local noiseX = i + noiseOffsetX
             local noiseY = j + noiseOffsetY
             local startingFactor = clamp(0, 0.01 * math.pow(dist(0, 0, i, j), 2), 1)
             local noise1 = love.math.noise(noiseX / noiseScale1, noiseY / noiseScale1)
             local noise3 = love.math.noise(noiseX / noiseScale3, noiseY / noiseScale3)
+            local noise4 = love.math.noise((10000 + noiseX) / noiseScale4, (10000 + noiseY) / noiseScale4)
             local noise6 = love.math.noise(noiseX / noiseScale6, noiseY / noiseScale6)
             local noise12 = love.math.noise(noiseX / noiseScale12, noiseY / noiseScale12)
 
             local rockNoise = noise6 * startingFactor
-            local treeNoise = math.sqrt(noise3 * noise12) * startingFactor
+            local treeNoise = noise4 * startingFactor
 
             local isTree
 
-            if tile.isMountain then
+            if tile.mountain then
+                local noiseFactor = 0.12 * noise12
+                love.graphics.setColor(1, 1, 1)
+
+                if tile.mountain == 2 then
+                    love.graphics.setColor(0.7, 0.7, 0.7)
+                end
+
                 love.graphics.setCanvas(ROOF_CANVAS)
                 love.graphics.draw(ROCK_IMAGE, (i + GRID_TILES) * GRID_SIZE, (j + GRID_TILES) * GRID_SIZE, 0, 0.5, 0.5)
+                love.graphics.setColor(1, 1, 1)
+
             end
 
-            if treeNoise > 0.6 and not tile.isMountain then
+            if treeNoise > 0.8 and not tile.mountain then
                 isTree = true
                 local building = Tree.create(i, j)
                 table.insert(buildings, building)
                 building:init()
             end
 
-            if rockNoise > 0.93 and not tile.isMountain and not isTree then
+            if rockNoise > 0.9 and not tile.mountain and not isTree then
                 local building = Rock.create(i, j)
                 table.insert(buildings, building)
                 building:init()
@@ -501,19 +522,19 @@ function calculateCostOfTravel(node, targetNode)
 --    if tile.building then
 --        score = score + 20 * tile.building.health / 100
 --
---        if tile.building.isTree or tile.building.isRock or tile.isMountain then
+--        if tile.building.isTree or tile.building.isRock or tile.mountain then
 --            score = score + 50
 --        end
 --    end
 --
---    if tile.isMountain then
+--    if tile.mountain then
 --        score = score + 500
 --    end
     if tile.building then
         score = score + 100
     end
 
-    if tile.isMountain then
+    if tile.mountain then
         score = score + 1000
     end
 
@@ -595,7 +616,7 @@ function calculateFlow(operations)
                             local y = j + l
 
                             if x >= -GRID_TILES and x <= GRID_TILES and y >= -GRID_TILES and y <= GRID_TILES then
-                                if grid[x][y].building then
+                                if grid[x][y].building or grid[x][y].mountain then
                                     grid[i][j].tight = true
                                 end
                                 if
@@ -754,7 +775,7 @@ function love.wheelmoved(x, y)
             targetScale = cam:getScale() - 0.3 * cam:getScale()
         end
 
-        targetScale = clamp(0.5, targetScale, 3)
+        targetScale = clamp(0.4, targetScale, 3)
 
         local mx, my = love.mouse.getPosition()
         local xDiff = love.graphics.getWidth() / 2 - mx

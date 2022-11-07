@@ -12,7 +12,7 @@ return {
         building.gun = createBow()
         building.scale = 0.5
         building.height = 2
-        building.range = 10
+        building.range = 9
         building.cost = {{ "Wood", 20 }}
         building.shape = {
             {1},

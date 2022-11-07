@@ -11,8 +11,8 @@ return {
 
             setCanPlace = function(self)
                 local tile = grid[self.obj.gridX][self.obj.gridY]
-                local isValid = (self.obj.placeOnMountain and tile.isMountain) or (not self.obj.placeOnMountain and not tile.isMountain)
-                self.canPlace =  not doesOverlap(self.obj.gridX - self.obj.offsetX * 2, self.obj.gridY - self.obj.offsetY * 2, self.obj.shape) and self:canAfford() and isValid
+                local isValid = (self.obj.placeOnMountain and tile.mountain == 1) or (not self.obj.placeOnMountain and not tile.mountain)
+                self.canPlace = not doesOverlap(self.obj.gridX, self.obj.gridY, self.obj.shape) and self:canAfford() and isValid
             end,
 
             canAfford = function(self)
@@ -46,12 +46,11 @@ return {
                 if gridX ~= self.gridX or gridY ~= self.gridY or not self.visible then
                     self.obj.gridX = gridX - self.obj.offsetX * 2
                     self.obj.gridY = gridY - self.obj.offsetY * 2
-
                     self.visible = true
-                    self:setCanPlace()
-
                     self.obj.x = (gridX - self.obj.offsetX) * GRID_SIZE
                     self.obj.y = (gridY - self.obj.offsetY) * GRID_SIZE
+
+                    self:setCanPlace()
 
                     if self.obj.getAOE then
                         self.obj:getAOE()

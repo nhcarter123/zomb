@@ -128,7 +128,7 @@ function createZombie(x, y)
         local targetSpeed = 0
         local speed = 0
 
-        if (tile.building and not tile.building.isStone and not tile.building.isTree) and self.attacking then
+        if tile.building and self.attacking then
             -- If the grid has updated and the last tile was actially better then stop attacking and go back
             if self.previousCachedTile and self.previousCachedTile.weight < tile.weight then
                 self.attacking = false
